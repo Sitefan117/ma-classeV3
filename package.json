@@ -1,0 +1,33 @@
+{
+  "name": "classe-sveltekit-foundation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --host 0.0.0.0",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "db:migrate": "tsx src/lib/server/db/migrate.ts",
+    "teacher:hash": "tsx src/lib/server/auth/print-teacher-hash.ts"
+  },
+  "dependencies": {
+    "@sveltejs/adapter-node": "^5.2.0",
+    "@sveltejs/kit": "^2.22.0",
+    "better-sqlite3": "^11.10.0",
+    "drizzle-orm": "^0.45.2",
+    "svelte": "^5.35.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.1.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.15.30",
+    "svelte-check": "^4.2.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  },
+  "overrides": {
+    "cookie": "0.7.2"
+  }
+}

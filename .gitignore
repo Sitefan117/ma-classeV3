@@ -1,0 +1,17 @@
+node_modules/
+.svelte-kit/
+build/
+.vite/
+.env
+.env.*
+!.env.example
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.DS_Store
+
+.pi/memory/
+.workflow/
+migrations/
+/*.html
