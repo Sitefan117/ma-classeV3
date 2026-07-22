@@ -1,4 +1,4 @@
-export type WorldId = 'livrets' | 'geometrie' | 'calculs' | 'numeria' | 'pcp';
+export type WorldId = 'livrets' | 'geometrie' | 'calculs' | 'numeria' | 'pcp' | 'convertigo';
 
 export const worlds: Array<{
   id: WorldId;
@@ -47,6 +47,14 @@ export const worlds: Array<{
     route: '/pcp',
     emoji: '💼',
     color: 'amber'
+  },
+  {
+    id: 'convertigo',
+    title: 'Convertigo',
+    subtitle: 'Outil de conversion et exercices pratiques.',
+    route: '/convertigo', // <-- C'est l'adresse URL de ton module
+    emoji: '🔄',
+    color: 'blue'
   }
 ];
 
@@ -55,5 +63,6 @@ export const worldLabels: Record<WorldId, string> = {
   geometrie: 'Le Défi des Formes',
   calculs: 'Le Calcul Décimal',
   numeria: 'Les Royaumes de Numéria',
-  pcp: 'Espace PCP / Orientation'
+  pcp: 'Espace PCP / Orientation',
+  convertigo: 'Convertigo'
 };
