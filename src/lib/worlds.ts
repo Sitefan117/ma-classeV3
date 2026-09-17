@@ -55,6 +55,30 @@ export const worlds: Array<{
     route: '/convertigo', // <-- C'est l'adresse URL de ton module
     emoji: '🔄',
     color: 'blue'
+  },
+  {
+    id: 'conju_fighter',
+    title: 'Conju_fighter',
+    subtitle: 'Outil de conversion et exercices pratiques.',
+    route: '/conju_fighter', // <-- C'est l'adresse URL de ton module
+    emoji: '🔄',
+    color: 'blue'
+  },
+  {
+    id: 'race',
+    title: 'Race',
+    subtitle: 'Course avec calcule automatique',
+    route: '/race', // <-- C'est l'adresse URL de ton module
+    emoji: '🔄',
+    color: 'blue'
+  },
+  {
+    id: 'swissgamefactory',
+    title: 'Swiss Game Factory',
+    subtitle: 'Plateforme de création de jeux vidéo éducatifs.',
+    route: '/swissgamefactory',
+    emoji: '🎮',
+    color: 'green'
   }
 ];
 
@@ -64,5 +88,8 @@ export const worldLabels: Record<WorldId, string> = {
   calculs: 'Le Calcul Décimal',
   numeria: 'Les Royaumes de Numéria',
   pcp: 'Espace PCP / Orientation',
-  convertigo: 'Convertigo'
+  convertigo: 'Convertigo',
+  conju_fighter: 'conju_fighter',
+  race: 'race',
+  swissgamefactory: 'swissgamefactory'
 };
