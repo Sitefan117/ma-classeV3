@@ -1,4 +1,5 @@
 <script lang="ts">
+export const prerender = false;
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
