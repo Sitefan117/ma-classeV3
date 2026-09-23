@@ -1,3 +1,5 @@
+export const prerender = false;
+
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { addTeacherNote, getTeacherDashboardData } from '$lib/server/activity-results';

@@ -79,6 +79,14 @@ export const worlds: Array<{
     route: '/swissgamefactory',
     emoji: '🎮',
     color: 'green'
+  },
+  {
+    id: 'mathhunt',
+    title: 'Math Hunt',
+    subtitle: 'Chasse aux livrets',
+    route: '/mathhunt',
+    emoji: '🔍',
+    color: 'yellow'
   }
 ];
 
@@ -91,5 +99,6 @@ export const worldLabels: Record<WorldId, string> = {
   convertigo: 'Convertigo',
   conju_fighter: 'conju_fighter',
   race: 'race',
-  swissgamefactory: 'swissgamefactory'
+  swissgamefactory: 'swissgamefactory',
+  mathhunt: 'mathhunt'
 };

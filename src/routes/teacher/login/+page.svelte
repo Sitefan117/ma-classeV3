@@ -1,6 +1,5 @@
 <script lang="ts">
-export const prerender = false;
-import type { ActionData } from './$types';
+  import type { ActionData } from './$types';
   export let form: ActionData;
 </script>
 
