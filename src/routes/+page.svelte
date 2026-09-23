@@ -29,7 +29,7 @@
   }
 
   function routeFor(route: string): string {
-    return `${route}?eleve=${encodeURIComponent(studentName)}`;
+    return `${base}${route}?eleve=${encodeURIComponent(studentName)}`;
   }
 </script>
 
