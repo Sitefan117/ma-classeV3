@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import type { ActionData } from './$types';
   export let form: ActionData;
 </script>
@@ -17,7 +18,7 @@
           <p class="brand-subtitle">Session protégée côté serveur</p>
         </div>
       </div>
-      <a class="btn ghost" href="/">↩ QG</a>
+      <a class="btn ghost" href="{base}/">↩ QG</a>
     </div>
   </header>
 

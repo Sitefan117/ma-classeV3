@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { base } from '$app/paths';
   import { getStudentName, submitActivityResult } from '$lib/client/activity';
 
   type Phase = 'setup' | 'play' | 'done';
@@ -169,7 +170,7 @@
   <header class="dark-header">
     <div class="header-inner">
       <div class="brand"><span class="brand-icon">⚡</span><div><h1 class="brand-title">Noyau : Calcul Décimal</h1><p class="brand-subtitle">Agent : {studentName}</p></div></div>
-      <a class="btn dark" href="/">↩ QG</a>
+      <a class="btn dark" href="{base}/">↩ QG</a>
     </div>
   </header>
 
@@ -214,7 +215,7 @@
           <p style="font-size: 3rem; font-weight: 1000; color: var(--amber);">{score} / 10</p>
           <p>{score >= 8 ? '🏆 Victoire éclatante ! Excellents calculs.' : '⚔️ Objectif incomplet. Poursuis l’entraînement.'}</p>
           <p class="muted small">{sentMessage}</p>
-          <div class="actions" style="justify-content: center;"><button class="btn primary" type="button" on:click={startMission}>Rejouer</button><a class="btn dark" href="/">Retour au QG</a></div>
+          <div class="actions" style="justify-content: center;"><button class="btn primary" type="button" on:click={startMission}>Rejouer</button><a class="btn dark" href="{base}/">Retour au QG</a></div>
         </div>
       {/if}
     </section>

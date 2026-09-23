@@ -5,7 +5,8 @@ build/
 .env
 .env.*
 !.env.example
-data/
+/data/
+!src/routes/convertigo/data/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal

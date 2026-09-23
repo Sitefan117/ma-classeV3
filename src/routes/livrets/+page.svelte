@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { getStudentName, submitActivityResult } from '$lib/client/activity';
 
@@ -109,7 +110,7 @@
           <p class="brand-subtitle">Agent : {studentName}</p>
         </div>
       </div>
-      <a class="btn dark" href="/">↩ QG</a>
+      <a class="btn dark" href="{base}/">↩ QG</a>
     </div>
   </header>
 
@@ -183,7 +184,7 @@
         <p class="muted small">{sentMessage}</p>
         <div class="actions" style="justify-content: center;">
           <button class="btn primary" type="button" on:click={startMission}>Rejouer</button>
-          <a class="btn dark" href="/">Retour au QG</a>
+          <a class="btn dark" href="{base}/">Retour au QG</a>
         </div>
       </section>
     {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import type { ActionData, PageData } from './$types';
 
   export let data: PageData;
@@ -47,7 +48,7 @@
         </div>
       </div>
       <div class="actions no-print">
-        <a class="btn ghost" href="/">↩ QG</a>
+        <a class="btn ghost" href="{base}/">↩ QG</a>
         <form method="POST" action="/teacher/logout">
           <button class="btn ghost" type="submit">Déconnexion</button>
         </form>

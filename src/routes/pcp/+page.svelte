@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { getStudentName, submitActivityResult } from '$lib/client/activity';
 
@@ -222,7 +223,7 @@ Consignes strictes :
           <p class="brand-subtitle" style="margin: 0; font-size: 0.85rem; opacity: 0.8;">Dossier professionnel de {studentName}</p>
         </div>
       </div>
-      <a class="btn ghost" href="/" style="color: white; border: 1px solid white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.25rem;">↩ QG</a>
+      <a class="btn ghost" href="{base}/" style="color: white; border: 1px solid white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 0.25rem;">↩ QG</a>
     </div>
   </header>
 

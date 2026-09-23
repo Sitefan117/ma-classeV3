@@ -1,0 +1,100 @@
+[
+  {
+    "grade": "7H",
+    "belt": "white",
+    "bossHp": 3,
+    "theory": {
+      "illustration": "📏",
+      "title": "Les conversions de longueur",
+      "text": "Pour convertir des longueurs, utilise le tableau : km - hm - dam - m - dm - cm - mm. Chaque colonne correspond à un chiffre. Place l'unité dans la colonne de l'unité donnée, puis déplace la virgule vers l'unité demandée."
+    },
+    "flashCheck": {
+      "question": "Combien de centimètres y a-t-il dans 1 mètre ?",
+      "options": ["10 cm", "100 cm", "1000 cm"],
+      "expectedIndex": 1
+    },
+    "exercises": [
+      {
+        "type": "conversion",
+        "instruction": "Convertis cette longueur.",
+        "givenValue": 3,
+        "givenUnit": "m",
+        "targetUnit": "cm",
+        "expectedValue": 300,
+        "hint": "1 m = 100 cm, donc 3 m = 3 × 100 cm."
+      },
+      {
+        "type": "conversion",
+        "instruction": "Convertis cette longueur.",
+        "givenValue": 2500,
+        "givenUnit": "m",
+        "targetUnit": "km",
+        "expectedValue": 2.5,
+        "hint": "1 km = 1000 m. Divise par 1000."
+      },
+      {
+        "type": "estimation",
+        "instruction": "Quelle est la longueur la plus réaliste pour un crayon ?",
+        "options": ["18 mm", "18 cm", "18 m"],
+        "expected": "18 cm",
+        "hint": "Un crayon tient dans la main."
+      },
+      {
+        "type": "order",
+        "instruction": "Range ces longueurs de la plus petite à la plus grande.",
+        "items": ["5 m", "5 cm", "5 km"],
+        "expectedOrder": ["5 cm", "5 m", "5 km"],
+        "hint": "Compare d'abord les unités : cm < m < km."
+      }
+    ]
+  },
+  {
+    "grade": "8H",
+    "belt": "white",
+    "chronoSeconds": 45,
+    "theory": {
+      "illustration": "📐",
+      "title": "Conversions avec nombres décimaux",
+      "text": "Avec les nombres décimaux, la virgule se déplace dans le tableau de conversion. Convertir 0,75 km en m : place 0 dans la colonne km, la virgule après le 0, puis lis jusqu'à la colonne m : 750 m."
+    },
+    "flashCheck": {
+      "question": "Combien de mètres y a-t-il dans 2,5 km ?",
+      "options": ["250 m", "2500 m", "25 000 m"],
+      "expectedIndex": 1
+    },
+    "exercises": [
+      {
+        "type": "conversion",
+        "instruction": "Convertis cette longueur.",
+        "givenValue": 0.75,
+        "givenUnit": "km",
+        "targetUnit": "m",
+        "expectedValue": 750,
+        "hint": "1 km = 1000 m, donc 0,75 km = 0,75 × 1000 m."
+      },
+      {
+        "type": "conversion",
+        "instruction": "Convertis cette longueur.",
+        "givenValue": 45,
+        "givenUnit": "cm",
+        "targetUnit": "m",
+        "expectedValue": 0.45,
+        "hint": "1 m = 100 cm. Divise par 100."
+      },
+      {
+        "type": "estimation",
+        "instruction": "Quelle est la hauteur la plus réaliste d'une salle de classe ?",
+        "options": ["30 cm", "3 m", "30 m"],
+        "expected": "3 m",
+        "hint": "Une salle est plus haute qu'une personne, mais bien moins qu'un immeuble."
+      },
+      {
+        "type": "order",
+        "instruction": "Range ces longueurs de la plus petite à la plus grande.",
+        "items": ["50 m", "500 cm", "0,5 km"],
+        "expectedOrder": ["500 cm", "50 m", "0,5 km"],
+        "hint": "Convertis tout en mètres : 500 cm = 5 m et 0,5 km = 500 m."
+      }
+    ]
+  }
+]

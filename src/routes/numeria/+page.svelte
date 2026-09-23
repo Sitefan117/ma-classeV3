@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { getStudentName, submitActivityResult } from '$lib/client/activity';
 
@@ -233,7 +234,7 @@
   <header class="dark-header">
     <div class="header-inner">
       <div class="brand"><span class="brand-icon">⚔️</span><div><h1 class="brand-title">NUMÉRIA</h1><p class="brand-subtitle">Les Royaumes de la Numération</p></div></div>
-      <a class="btn dark" href="/">↩ QG</a>
+      <a class="btn dark" href="{base}/">↩ QG</a>
     </div>
   </header>
 

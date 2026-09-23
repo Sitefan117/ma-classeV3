@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from '$app/paths';
   import { onMount } from 'svelte';
   import { clearStudentName, getStudentName, storeStudentName } from '$lib/client/activity';
   import { worlds } from '$lib/worlds';
@@ -47,7 +48,7 @@
           <p class="brand-subtitle">QG local d’apprentissage autonome</p>
         </div>
       </div>
-      <a class="btn ghost" href="/teacher">⚙️ Espace Enseignant</a>
+      <a class="btn ghost" href="{base}/teacher">⚙️ Espace Enseignant</a>
     </div>
   </header>
 
