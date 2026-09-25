@@ -23,7 +23,6 @@
             font-family: 'Press Start 2P', monospace, cursive;
             overflow: hidden;
         }
-        /* Low-res crisp pixel art rendering */
         canvas {
             image-rendering: optimizeSpeed;
             image-rendering: -moz-crisp-edges;
@@ -45,7 +44,6 @@
             background-size: 100% 3px, 6px 100%;
             pointer-events: none;
         }
-        /* Custom Arcade Border */
         .arcade-frame {
             border: 4px solid #3b2d54;
             outline: 4px solid #000;
@@ -82,10 +80,8 @@
     <!-- GAME WRAPPER -->
     <div id="game-wrapper" class="relative w-full max-w-4xl aspect-[16/9] flex items-center justify-center bg-black rounded-lg overflow-hidden arcade-frame">
         
-        <!-- Game Canvas Rendering Window -->
         <canvas id="gameCanvas" width="320" height="180" class="w-full h-full block cursor-none"></canvas>
 
-        <!-- CRT Scanline Effect Overlay -->
         <div class="absolute inset-0 scanlines pointer-events-none"></div>
 
         <!-- UI OVERLAY: MENU -->
@@ -95,7 +91,6 @@
                 <p class="text-[8px] sm:text-xs text-[#a3a7c2] uppercase">JEU DE TIR ARCADE SUR LES MULTIPLICATIONS</p>
             </div>
 
-            <!-- Tables Selection Grid -->
             <div class="w-full max-w-xl my-1 sm:my-2">
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-[10px] sm:text-xs text-[#52b141]">LIVRETS À CHASSER:</span>
@@ -104,42 +99,34 @@
                         <button id="btn-deselect-all" type="button" class="text-[8px] sm:text-[10px] bg-[#1d1d2c] border border-[#a3a7c2] px-2 py-1 hover:bg-[#32324e]">AUCUN</button>
                     </div>
                 </div>
-                <div id="table-grid" class="grid grid-cols-4 sm:grid-cols-6 gap-2 text-xs">
-                    <!-- Buttons JS generated dynamically -->
-                </div>
+                <div id="table-grid" class="grid grid-cols-4 sm:grid-cols-6 gap-2 text-xs"></div>
             </div>
 
-            <!-- Options Panel -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 w-full max-w-xl text-[9px] sm:text-xs my-1 sm:my-2">
-                <!-- Difficulty -->
                 <div class="bg-[#18132b] p-2 border border-[#3b2d54] flex flex-col justify-center items-center gap-1">
                     <span class="text-[#f6a000]">DIFFICULTÉ</span>
                     <button id="btn-difficulty" type="button" class="pixel-btn px-2 py-1 sm:py-2 w-full text-center">FACILE</button>
                 </div>
-                <!-- Movement -->
                 <div class="bg-[#18132b] p-2 border border-[#3b2d54] flex flex-col justify-center items-center gap-1">
                     <span class="text-[#f6a000]">MOUVEMENT</span>
                     <button id="btn-movement" type="button" class="pixel-btn px-2 py-1 sm:py-2 w-full text-center">ON</button>
                 </div>
-                <!-- Sound -->
                 <div class="bg-[#18132b] p-2 border border-[#3b2d54] flex flex-col justify-center items-center gap-1">
                     <span class="text-[#f6a000]">SONS</span>
                     <button id="btn-sound" type="button" class="pixel-btn px-2 py-1 sm:py-2 w-full text-center">ON</button>
                 </div>
             </div>
 
-            <!-- Warning message when no tables selected -->
             <div id="table-warning" class="hidden text-[#e2443a] text-[9px] sm:text-xs font-bold animate-pulse">
                 SÉLECTIONNEZ AU MOINS 1 LIVRET !
             </div>
 
-            <!-- Start Game Button -->
             <button id="btn-start-game" type="button" class="pixel-btn active text-xs sm:text-lg px-6 py-3 my-1 sm:my-2 w-full max-w-md animate-pulse">
                 &gt;&gt; START GAME &lt;&lt;
             </button>
         </div>
 
-        <!-- UI OVERLAY: VICTORY / GAME OVER -->
+        <!-- UI OVERLAY: VICTORY -->
         <div id="victory-overlay" class="hidden absolute inset-0 bg-[#0f0a1c] bg-opacity-95 p-6 flex flex-col justify-center items-center text-center z-30">
             <div class="border-4 border-[#f6a000] p-4 sm:p-6 max-w-lg w-full bg-[#18132b] flex flex-col items-center gap-3 sm:gap-4">
                 <h2 class="text-lg sm:text-2xl text-[#f6d6bd] tracking-widest animate-bounce">PARTIE TERMINÉE !</h2>
@@ -170,9 +157,6 @@
     </div>
 
     <script>
-        /* =========================================================================
-           1. AUDIO SYNTHESIZER (8-Bit Synthesized Sound via Web Audio API)
-           ========================================================================= */
         class RetroAudioEngine {
             constructor() {
                 this.ctx = null;
@@ -292,20 +276,15 @@
             }
         }
 
-        /* =========================================================================
-           2. GAME DATA & QUESTION GENERATOR
-           ========================================================================= */
         class QuestionGenerator {
             static generate(selectedTables, difficulty) {
                 if (!selectedTables || selectedTables.length === 0) {
                     selectedTables = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
                 }
                 
-                // Pick random table from selection
                 const table = selectedTables[Math.floor(Math.random() * selectedTables.length)];
                 const multiplier = Math.floor(Math.random() * 12) + 1;
                 
-                // Randomly swap factors for variety (e.g., 7 x 8 vs 8 x 7)
                 const swap = Math.random() < 0.5;
                 const factorA = swap ? multiplier : table;
                 const factorB = swap ? table : multiplier;
@@ -314,7 +293,6 @@
                 const wrongAnswers = new Set();
 
                 if (difficulty === 'FACILE') {
-                    // Random bounds
                     while (wrongAnswers.size < 3) {
                         const delta = (Math.floor(Math.random() * 20) + 1) * (Math.random() < 0.5 ? 1 : -1);
                         const dummy = Math.max(1, correctAnswer + delta);
@@ -323,7 +301,6 @@
                         }
                     }
                 } else {
-                    // ACCRUE: Smart distractors (±1, ±2, factor swap mistakes, neighbor table results)
                     const smartCandidates = [
                         correctAnswer + 1,
                         correctAnswer - 1,
@@ -366,9 +343,6 @@
             }
         }
 
-        /* =========================================================================
-           3. SPRITES & CANVAS RENDERER
-           ========================================================================= */
         const CANVAS_WIDTH = 320;
         const CANVAS_HEIGHT = 180;
 
@@ -386,7 +360,7 @@
                 this.frame = 0;
                 this.animTimer = 0;
                 this.facingRight = this.vx >= 0;
-                this.state = 'ALIVE'; // 'ALIVE', 'HIT', 'DEAD'
+                this.state = 'ALIVE';
                 this.rotation = 0;
                 this.fallSpeed = 0;
             }
@@ -396,7 +370,6 @@
                     this.x += this.vx;
                     this.y += this.vy;
 
-                    // Bounce off boundary edges
                     if (this.x < 15 || this.x > CANVAS_WIDTH - 45) {
                         this.vx *= -1;
                         this.facingRight = this.vx >= 0;
@@ -405,7 +378,6 @@
                         this.vy *= -1;
                     }
 
-                    // Flapping animation frame
                     this.animTimer += delta;
                     if (this.animTimer > 0.15) {
                         this.frame = (this.frame + 1) % 4;
@@ -431,51 +403,43 @@
                     ctx.scale(-1, 1);
                 }
 
-                // DRAW DUCK PIXEL ART
                 const bodyColor = '#805300';
                 const headColor = '#24802c';
                 const wingColor = '#a8731d';
                 const beakColor = '#f6a000';
 
-                // Duck Head
                 ctx.fillStyle = headColor;
                 ctx.fillRect(-6, -12, 10, 8);
 
-                // Eye
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, -10, 2, 2);
                 ctx.fillStyle = '#000000';
                 ctx.fillRect(1, -10, 1, 1);
 
-                // Beak
                 ctx.fillStyle = beakColor;
                 ctx.fillRect(4, -8, 6, 3);
 
-                // Body
                 ctx.fillStyle = bodyColor;
                 ctx.fillRect(-10, -4, 18, 10);
-                ctx.fillRect(-12, -2, 2, 6); // Tail
+                ctx.fillRect(-12, -2, 2, 6);
 
-                // Wings depending on animation frame
                 ctx.fillStyle = wingColor;
-                if (this.frame === 0) { // Wing up
+                if (this.frame === 0) {
                     ctx.fillRect(-4, -12, 6, 8);
-                } else if (this.frame === 1 || this.frame === 3) { // Wing middle
+                } else if (this.frame === 1 || this.frame === 3) {
                     ctx.fillRect(-6, -3, 10, 5);
-                } else if (this.frame === 2) { // Wing down
+                } else if (this.frame === 2) {
                     ctx.fillRect(-4, 2, 6, 7);
                 }
 
                 ctx.restore();
 
-                // DRAW ANSWER PLAQUE / BANNER ATTACHED BELOW DUCK
                 ctx.save();
                 const plaqueWidth = 26;
                 const plaqueHeight = 12;
                 const plaqueX = Math.floor(this.x + (this.width - plaqueWidth) / 2);
                 const plaqueY = Math.floor(this.y + this.height + 2);
 
-                // String hanging
                 ctx.strokeStyle = '#000000';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
@@ -485,13 +449,11 @@
                 ctx.lineTo(plaqueX + plaqueWidth - 4, plaqueY);
                 ctx.stroke();
 
-                // Plaque background & border
                 ctx.fillStyle = '#000000';
                 ctx.fillRect(plaqueX - 1, plaqueY - 1, plaqueWidth + 2, plaqueHeight + 2);
                 ctx.fillStyle = '#f6d6bd';
                 ctx.fillRect(plaqueX, plaqueY, plaqueWidth, plaqueHeight);
 
-                // Text Choice
                 ctx.fillStyle = '#000000';
                 ctx.font = '8px "Press Start 2P"';
                 ctx.textAlign = 'center';
@@ -511,27 +473,21 @@
             }
         }
 
-        /* =========================================================================
-           4. MAIN GAME CONTROLLER
-           ========================================================================= */
         class TableHuntGame {
             constructor() {
                 this.canvas = document.getElementById('gameCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.audio = new RetroAudioEngine();
 
-                // All tables 1-12 selected by default
                 this.selectedTables = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
                 this.difficulty = 'FACILE';
                 this.movementOn = true;
 
-                // Game State Counters
                 this.correctHits = 0;
                 this.totalShots = 0;
                 this.targetScore = 10;
                 this.isPlaying = false;
 
-                // Entities & FX
                 this.ducks = [];
                 this.currentQuestion = null;
                 this.effects = [];
@@ -555,7 +511,6 @@
                 if (!tableGrid) return;
                 tableGrid.innerHTML = '';
 
-                // Create Table Buttons 1 to 12
                 for (let i = 1; i <= 12; i++) {
                     const btn = document.createElement('button');
                     btn.type = 'button';
@@ -575,7 +530,6 @@
                     tableGrid.appendChild(btn);
                 }
 
-                // Select All / Deselect All
                 document.getElementById('btn-select-all').onclick = (e) => {
                     e.preventDefault();
                     this.selectedTables = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -590,7 +544,6 @@
                     this.checkTableWarning();
                 };
 
-                // Option Toggles
                 const btnDiff = document.getElementById('btn-difficulty');
                 btnDiff.onclick = (e) => {
                     e.preventDefault();
@@ -612,7 +565,6 @@
                     btnSound.innerText = this.audio.enabled ? 'ON' : 'OFF';
                 };
 
-                // Start Game
                 document.getElementById('btn-start-game').onclick = (e) => {
                     e.preventDefault();
                     if (this.selectedTables.length === 0) {
@@ -624,7 +576,6 @@
                     this.startGame();
                 };
 
-                // Replay & Menu Buttons
                 document.getElementById('btn-replay').onclick = (e) => {
                     e.preventDefault();
                     document.getElementById('victory-overlay').classList.add('hidden');
@@ -905,7 +856,6 @@
             }
         }
 
-        // Safe robust window loader
         function initApp() {
             window.game = new TableHuntGame();
         }
