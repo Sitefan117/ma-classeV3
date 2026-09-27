@@ -16,6 +16,21 @@ export interface LabModule {
 
 export const labModules: LabModule[] = [
   {
+    id: "carnet-geometrie",
+    title: "Carnet de Géométrie (Modules 1 à 5)",
+    subject: "Mathématiques",
+    domain: "Espace",
+    description: "Tracés de précision, compas, perpendiculaires, parallèles, recherche de points et figures usuelles.",
+    level: "8H-10H",
+    duration: "45 min",
+    isInteractive: true,
+    href: "/learning-lab/mathematiques/espace/geometrie.html",
+    gameLink: {
+      title: "Geom Fighter",
+      route: "/geom-fighter"
+    }
+  },
+  {
     id: "croquis-solides",
     title: "Construire un croquis de solide",
     subject: "Mathématiques",
