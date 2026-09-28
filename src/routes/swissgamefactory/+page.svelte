@@ -2,37 +2,68 @@
   import { onMount } from 'svelte';
 
   /* ==========================================================================
-     1. MOTEUR MATHÉMATIQUE (MathEngine)
+     1. MOTEUR MATHÉMATIQUE SUISSE (MathEngine)
      ========================================================================== */
   const MathEngine = {
     units: ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'],
+    teens: ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'],
     tens: ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'septante', 'huitante', 'nonante'],
 
     numberToSwissText(n) {
       if (n === 0) return 'zéro';
-      if (n < 10) return this.units[n];
-      if (n < 100) {
-        let t = Math.floor(n / 10), u = n % 10;
-        if (n === 11) return 'onze'; if (n === 12) return 'douze'; if (n === 13) return 'treize';
-        if (n === 14) return 'quatorze'; if (n === 15) return 'quinze'; if (n === 16) return 'seize';
-        return this.tens[t] + (u === 1 ? ' et un' : (u > 0 ? '-' + this.units[u] : ''));
+      if (n === 10000) return 'dix mille';
+
+      let parts = [];
+
+      // Milliers
+      if (n >= 1000) {
+        let m = Math.floor(n / 1000);
+        if (m === 1) {
+          parts.push('mille');
+        } else {
+          parts.push(this.numberToSwissText(m) + ' mille');
+        }
+        n %= 1000;
       }
-      if (n < 1000) {
-        let c = Math.floor(n / 100), rem = n % 100;
-        let cText = c === 1 ? 'cent' : this.units[c] + ' cents';
-        return cText + (rem > 0 ? ' ' + this.numberToSwissText(rem) : '');
+
+      // Centaines
+      if (n >= 100) {
+        let c = Math.floor(n / 100);
+        let rem = n % 100;
+        if (c === 1) {
+          parts.push('cent');
+        } else {
+          // Rule: "cents" if ending the number, otherwise "cent"
+          parts.push(rem === 0 ? this.units[c] + ' cents' : this.units[c] + ' cent');
+        }
+        n %= 100;
       }
-      if (n <= 10000) {
-        let m = Math.floor(n / 1000), rem = n % 1000;
-        let mText = m === 1 ? 'mille' : this.numberToSwissText(m) + ' mille';
-        return mText + (rem > 0 ? ' ' + this.numberToSwissText(rem) : '');
+
+      // Dizaines et Unités
+      if (n > 0) {
+        if (n < 10) {
+          parts.push(this.units[n]);
+        } else if (n >= 10 && n < 20) {
+          parts.push(this.teens[n - 10]);
+        } else {
+          let t = Math.floor(n / 10);
+          let u = n % 10;
+          if (u === 1) {
+            parts.push(this.tens[t] + ' et un');
+          } else if (u > 0) {
+            parts.push(this.tens[t] + '-' + this.units[u]);
+          } else {
+            parts.push(this.tens[t]);
+          }
+        }
       }
-      return n.toString();
+
+      return parts.join(' ');
     },
 
     decompose(num) {
       return {
-        U: num % 10,
+        U: Math.floor(num) % 10,
         D: Math.floor(num / 10) % 10,
         C: Math.floor(num / 100) % 10,
         M: Math.floor(num / 1000) % 10
@@ -57,11 +88,126 @@
       };
 
       return { target, deliveredVal, targetDec, deliveredDec, diffs };
+    },
+
+    runSelfTests() {
+      const tests = [
+        [1, 'un'], [11, 'onze'], [21, 'vingt et un'], [31, 'trente et un'],
+        [71, 'septante et un'], [81, 'huitante et un'], [91, 'nonante et un'],
+        [100, 'cent'], [101, 'cent un'], [110, 'cent dix'], [121, 'cent vingt et un'],
+        [200, 'deux cents'], [201, 'deux cent un'], [210, 'deux cent dix'],
+        [999, 'neuf cent nonante-neuf'], [1000, 'mille'], [1001, 'mille un'],
+        [1010, 'mille dix'], [1100, 'mille cent'], [1234, 'mille deux cent trente-quatre'],
+        [2000, 'deux mille'], [9999, 'neuf mille neuf cent nonante-neuf'], [10000, 'dix mille']
+      ];
+      let passed = 0;
+      tests.forEach(([val, expected]) => {
+        const res = this.numberToSwissText(val);
+        if (res === expected) passed++;
+        else console.error(`[MathEngine Test Fail] ${val}: attendu "${expected}", obtenu "${res}"`);
+      });
+      console.log(`[MathEngine] Tests exécutés: ${passed}/${tests.length} réussis.`);
     }
   };
 
   /* ==========================================================================
-     2. MOTEUR AUDIO ET EFFETS (Audio & Visuals)
+     2. MOTEUR DE DIFFICULTÉ ET PROFILS
+     ========================================================================== */
+  const DifficultyEngine = {
+    profiles: {
+      1: { min: 1, max: 999, allowZeros: false, description: "Nombres simples sans piège" },
+      2: { min: 100, max: 999, allowZeros: true, description: "Présence de zéros intercalés (ex: 204)" },
+      3: { min: 1000, max: 5000, allowZeros: true, description: "Grands nombres jusqu'à 5'000" },
+      4: { min: 1000, max: 9999, allowZeros: true, description: "Pleine plage avec retenues" },
+      5: { min: 9000, max: 10000, allowZeros: true, description: "Cas limites (9'999, 10'000)" }
+    },
+
+    generateCandidate(minVal, maxVal, config) {
+      let candidate = 0;
+      let attempts = 0;
+      do {
+        candidate = Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal;
+        attempts++;
+      } while (!this.isValidForConfig(candidate, config) && attempts < 1000);
+      return candidate;
+    },
+
+    isValidForConfig(num, config) {
+      let dec = MathEngine.decompose(num);
+      if (config.noU && dec.U === 0) return false;
+      if (config.noD && dec.D === 0) return false;
+      if (config.noC && dec.C === 0) return false;
+      if (config.noM && dec.M === 0) return false;
+      return true;
+    }
+  };
+
+  /* ==========================================================================
+     3. MOTEUR DE FEEDBACK ADAPTATIF EN 5 NIVEAUX
+     ========================================================================== */
+  const FeedbackEngine = {
+    getFeedback(analysis, attempts, mode) {
+      const level = Math.min(5, attempts);
+      let html = `<strong>Contrôle Pédagogique — Tentative ${level}/5</strong><br><br>`;
+
+      switch (mode) {
+        case 2: // Lecture
+          if (level === 1) html += "Observe bien la valeur de chaque groupe de blocs.";
+          else if (level === 2) html += "Attention aux inversions entre chiffres proches (ex: dizaines et centaines).";
+          else if (level === 3) html += `La valeur totale comporte ${analysis.targetDec.M} Millier(s) et ${analysis.targetDec.C} Centaine(s).`;
+          else if (level === 4) html += `Décomposition exacte : ${analysis.targetDec.M}M ${analysis.targetDec.C}C ${analysis.targetDec.D}D ${analysis.targetDec.U}U.`;
+          else html += `Le nombre à sélectionner est : <strong>${analysis.target}</strong>.`;
+          break;
+
+        case 3: // Décomposition
+          if (level === 1) html += "Vérifie les valeurs saisies dans chaque colonne.";
+          else if (level === 2) html += "Attention aux positions contenant 0 ! Le zéro doit être indiqué.";
+          else if (level === 3) html += `Regarde bien les rangs défectueux.`;
+          else if (level === 4) html += `Attendu : ${analysis.targetDec.M}M, ${analysis.targetDec.C}C, ${analysis.targetDec.D}D, ${analysis.targetDec.U}U.`;
+          else html += `Renseigne exactement : M=${analysis.targetDec.M}, C=${analysis.targetDec.C}, D=${analysis.targetDec.D}, U=${analysis.targetDec.U}.`;
+          break;
+
+        case 4: // Transformation
+          if (level === 1) html += "Niveau 1 — CONSTATER : Regroupe ou décompose tes blocs par paquets de 10.";
+          else if (level === 2) html += "Niveau 2 — LOCALISER : Utilise les boutons de Fusion ou Décomposition.";
+          else if (level === 3) html += "Niveau 3 — QUESTIONNER : 10 Unités s'échangent contre 1 Dizaine.";
+          else if (level === 4) html += "Niveau 4 — COMPARER : Effectue les échanges requis avant d'expédier.";
+          else html += "Niveau 5 — AIDER : Clique sur Fusionner pour réduire le nombre d'éléments superflus.";
+          break;
+
+        default: // Production, Contrôle, Défi
+          if (level === 1) {
+            html += analysis.diffs.totalDiff < 0 
+              ? `Il manque <strong>${Math.abs(analysis.diffs.totalDiff)}</strong> pour compléter la commande.`
+              : `Il y a un surplus de <strong>${analysis.diffs.totalDiff}</strong> dans le carton.`;
+          } else if (level === 2) {
+            let errs = [];
+            if (analysis.diffs.M !== 0) errs.push("Milliers (M)");
+            if (analysis.diffs.C !== 0) errs.push("Centaines (C)");
+            if (analysis.diffs.D !== 0) errs.push("Dizaines (D)");
+            if (analysis.diffs.U !== 0) errs.push("Unités (U)");
+            html += `Vérifie prioritairement le rang des : <strong>${errs.join(', ')}</strong>.`;
+          } else if (level === 3) {
+            html += `La commande attend : ${analysis.targetDec.M}M | ${analysis.targetDec.C}C | ${analysis.targetDec.D}D | ${analysis.targetDec.U}U.<br>`;
+            html += `Ton carton contient actuellement une valeur de ${analysis.deliveredVal}.`;
+          } else if (level === 4) {
+            html += `<strong>Comparaison par position :</strong><br>`;
+            html += `• M: attendu ${analysis.targetDec.M}, livré ${analysis.deliveredDec.M}<br>`;
+            html += `• C: attendu ${analysis.targetDec.C}, livré ${analysis.deliveredDec.C}<br>`;
+            html += `• D: attendu ${analysis.targetDec.D}, livré ${analysis.deliveredDec.D}<br>`;
+            html += `• U: attendu ${analysis.targetDec.U}, livré ${analysis.deliveredDec.U}`;
+          } else {
+            html += `<strong>Conseil de fabrication :</strong><br>`;
+            html += `Ajuste le matériel sur l'établi puis glisse uniquement la quantité exacte dans le carton.`;
+          }
+          break;
+      }
+      return html;
+    }
+  };
+
+  /* ==========================================================================
+     4. MOTEUR AUDIO ET EFFETS
      ========================================================================== */
   let audioCtx = null;
   function initAudio() {
@@ -132,7 +278,7 @@
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = Math.random() * 5 + 2;
-      particles.push({ x: x, y: y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1.0, color: color, size: Math.random() * 3 + 2 });
+      particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 1.0, color, size: Math.random() * 3 + 2 });
     }
   }
 
@@ -153,10 +299,11 @@
   }
 
   /* ==========================================================================
-     3. CONFIGURATION ET ÉTAT D'APPLICATION (State & Config)
+     5. CONFIGURATION ET ÉTAT DE JEU
      ========================================================================== */
   let config = {
     taskMode: 1,
+    diffLevel: 1,
     minVal: 1, maxVal: 1999,
     noU: false, noD: false, noC: false, noM: false,
     lockBelt: true,
@@ -171,7 +318,11 @@
     specialType: null, errorAttempts: 0,
     workbench: { M: 0, C: 0, D: 0, U: 0 },
     cartonHasApo: false, activeBeltItems: [],
-    spawnerInterval: null, isBeltLocked: false
+    spawnerInterval: null, isBeltLocked: false,
+    // Specifique Mode 2 (Lecture)
+    qcmOptions: [],
+    // Specifique Mode 3 (Decomposition)
+    decompInput: { M: 0, C: 0, D: 0, U: 0 }
   };
 
   function loadSavedConfig() {
@@ -181,7 +332,7 @@
         const parsed = JSON.parse(saved);
         Object.assign(config, parsed);
       }
-    } catch (e) { console.warn("Impossible de charger les paramètres enregistrés."); }
+    } catch (e) { console.warn("Impossible de charger la configuration."); }
   }
 
   function saveCurrentConfig() {
@@ -191,7 +342,7 @@
   }
 
   /* ==========================================================================
-     4. CONSTRUCTEUR DE COMPOSANTS DOM & EVENTS
+     6. CONSTRUCTEUR DOM & ÉVÉNEMENTS
      ========================================================================== */
   function createPackageDOM(type) {
     const wrap = document.createElement('div');
@@ -240,10 +391,12 @@
   }
 
   /* ==========================================================================
-     5. BOUCLE DE JEU ET DÉROULEMENT
+     7. IMPLÉMENTATION DES MODES DE JEU
      ========================================================================== */
   function startGame() {
     config.taskMode = parseInt(document.getElementById('cfg-task-mode').value) || 1;
+    config.diffLevel = parseInt(document.getElementById('cfg-diff-level').value) || 1;
+    
     let minVal = parseInt(document.getElementById('cfg-min').value) || 1;
     let maxVal = parseInt(document.getElementById('cfg-max').value) || 1999;
     
@@ -283,74 +436,180 @@
     gameState.lives = config.trainingMode ? 999 : 3;
     updateUI();
     nextOrder();
-    startBeltSpawner();
-    requestAnimationFrame(updateBeltPositions);
-  }
-
-  function isValidNumberForConfig(num) {
-    let dec = MathEngine.decompose(num);
-    if (config.noU && dec.U === 0) return false;
-    if (config.noD && dec.D === 0) return false;
-    if (config.noC && dec.C === 0) return false;
-    if (config.noM && dec.M === 0) return false;
-    return true;
+    
+    // N'activer le tapis roulant que pour les modes necessitant du materiel brut
+    if ([1, 4, 5, 6].includes(config.taskMode)) {
+      startBeltSpawner();
+      requestAnimationFrame(updateBeltPositions);
+    }
   }
 
   function nextOrder() {
-    let candidate = 0;
-    let attempts = 0;
-    do {
-      candidate = Math.floor(Math.random() * (config.maxVal - config.minVal + 1)) + config.minVal;
-      attempts++;
-    } while (!isValidNumberForConfig(candidate) && attempts < 1000);
-
-    gameState.currentOrderVal = candidate;
-    gameState.currentOrderText = MathEngine.numberToSwissText(candidate);
+    gameState.currentOrderVal = DifficultyEngine.generateCandidate(config.minVal, config.maxVal, config);
+    gameState.currentOrderText = MathEngine.numberToSwissText(gameState.currentOrderVal);
     gameState.cartonHasApo = false;
     gameState.errorAttempts = 0;
+    gameState.workbench = { M: 0, C: 0, D: 0, U: 0 };
 
     const apoBtn = document.getElementById('btn-toggle-apo');
     if (apoBtn) apoBtn.classList.remove('active');
 
-    document.getElementById('ui-order-num').innerText = candidate.toLocaleString('fr-CH');
+    document.getElementById('ui-order-num').innerText = gameState.currentOrderVal.toLocaleString('fr-CH');
     document.getElementById('ui-order-text').innerText = `"${gameState.currentOrderText}"`;
 
     const badgeSp = document.getElementById('ui-badge-special');
     const bonusApo = document.getElementById('ui-bonus-apo');
 
-    if (candidate >= 1000) bonusApo.style.display = 'block';
+    if (gameState.currentOrderVal >= 1000) bonusApo.style.display = 'block';
     else bonusApo.style.display = 'none';
 
+    // Rendre l'interface spécifique selon le mode
+    setupModeUI();
+
+    document.getElementById('carton-box').innerHTML = '';
+    renderWorkbench();
+    checkBeltLockCondition();
+  }
+
+  function setupModeUI() {
+    const badgeSp = document.getElementById('ui-badge-special');
+    const modeOverlay = document.getElementById('mode-specific-panel');
+    modeOverlay.innerHTML = '';
+    modeOverlay.style.display = 'none';
+
+    // Mode 6 : Défis
     if (config.taskMode === 6) {
       const types = ['no-fuse', 'exact-count'];
       gameState.specialType = types[Math.floor(Math.random() * types.length)];
+      if (gameState.specialType === 'no-fuse') {
+        badgeSp.innerHTML = `<span class="special-badge">DÉFI: SANS FUSION</span>`;
+        config.allowFuse = false;
+      } else {
+        badgeSp.innerHTML = `<span class="special-badge">DÉFI: SANS DÉCOMPOSITION</span>`;
+        config.allowBreak = false;
+      }
     } else {
       gameState.specialType = null;
+      badgeSp.innerHTML = '';
     }
 
-    if (gameState.specialType === 'no-fuse') badgeSp.innerHTML = `<span class="special-badge">DÉFI: SANS FUSION</span>`;
-    else if (gameState.specialType === 'exact-count') badgeSp.innerHTML = `<span class="special-badge">DÉFI: SANS DÉCOMPOSITION</span>`;
-    else badgeSp.innerHTML = '';
+    // Mode 2 : Lecture QCM
+    if (config.taskMode === 2) {
+      modeOverlay.style.display = 'block';
+      generateQCMOptions();
+      let html = '<div class="qcm-title">MODE LECTURE : Choisis le bon nombre correspondant à la commande</div><div class="qcm-grid">';
+      gameState.qcmOptions.forEach(opt => {
+        html += `<button type="button" class="btn-qcm" data-val="${opt}">${opt.toLocaleString('fr-CH')}</button>`;
+      });
+      html += '</div>';
+      modeOverlay.innerHTML = html;
 
-    document.getElementById('carton-box').innerHTML = '';
-    checkBeltLockCondition();
+      modeOverlay.querySelectorAll('.btn-qcm').forEach(btn => {
+        bindAction(btn, () => validateQCM(parseInt(btn.dataset.val)));
+      });
+    }
+
+    // Mode 3 : Décomposition
+    if (config.taskMode === 3) {
+      modeOverlay.style.display = 'block';
+      modeOverlay.innerHTML = `
+        <div class="qcm-title">MODE DÉCOMPOSITION : Indique la quantité exacte pour chaque rang</div>
+        <div class="decomp-grid">
+          <label>M: <input type="number" id="dec-M" min="0" max="9" value="0"></label>
+          <label>C: <input type="number" id="dec-C" min="0" max="9" value="0"></label>
+          <label>D: <input type="number" id="dec-D" min="0" max="9" value="0"></label>
+          <label>U: <input type="number" id="dec-U" min="0" max="9" value="0"></label>
+          <button type="button" class="btn-action btn-ship" id="btn-val-decomp">VALIDER DÉCOMPOSITION</button>
+        </div>
+      `;
+      bindAction(document.getElementById('btn-val-decomp'), validateDecomposition);
+    }
+
+    // Mode 5 : Contrôle Qualité (Pré-remplir le carton avec une erreur)
+    if (config.taskMode === 5) {
+      const dec = MathEngine.decompose(gameState.currentOrderVal);
+      // Génération d'une erreur réaliste de position
+      let errDec = { ...dec };
+      if (errDec.U < 9) errDec.U += 1; else errDec.U -= 1;
+      
+      const carton = document.getElementById('carton-box');
+      ['M', 'C', 'D', 'U'].forEach(type => {
+        for (let i = 0; i < errDec[type]; i++) {
+          const blk = createPackageDOM(type);
+          blk.dataset.type = type;
+          bindAction(blk, () => {
+            gameState.workbench[type]++;
+            blk.remove();
+            renderWorkbench();
+            checkBeltLockCondition();
+          });
+          carton.appendChild(blk);
+        }
+      });
+    }
+  }
+
+  function generateQCMOptions() {
+    const target = gameState.currentOrderVal;
+    const dec = MathEngine.decompose(target);
+    let options = new Set([target]);
+
+    // Distracteurs pertinents (inversions de positions)
+    if (dec.C !== dec.D) options.add(target - (dec.C * 100) - (dec.D * 10) + (dec.D * 100) + (dec.C * 10));
+    if (dec.D !== dec.U) options.add(target - (dec.D * 10) - dec.U + (dec.U * 10) + dec.D);
+    options.add(target + 10);
+    options.add(Math.max(1, target - 100));
+
+    let optsArray = Array.from(options).filter(v => v > 0 && v <= 10000).slice(0, 4);
+    while (optsArray.length < 4) {
+      optsArray.push(target + optsArray.length * 5);
+    }
+    gameState.qcmOptions = optsArray.sort(() => Math.random() - 0.5);
+  }
+
+  function validateQCM(selectedVal) {
+    if (selectedVal === gameState.currentOrderVal) {
+      handleSuccess();
+    } else {
+      handleFailure({
+        target: gameState.currentOrderVal,
+        deliveredVal: selectedVal,
+        targetDec: MathEngine.decompose(gameState.currentOrderVal),
+        deliveredDec: MathEngine.decompose(selectedVal),
+        diffs: { totalDiff: selectedVal - gameState.currentOrderVal }
+      });
+    }
+  }
+
+  function validateDecomposition() {
+    const m = parseInt(document.getElementById('dec-M').value) || 0;
+    const c = parseInt(document.getElementById('dec-C').value) || 0;
+    const d = parseInt(document.getElementById('dec-D').value) || 0;
+    const u = parseInt(document.getElementById('dec-U').value) || 0;
+
+    const userVal = MathEngine.calculateValue({ M: m, C: c, D: d, U: u });
+    const target = gameState.currentOrderVal;
+
+    if (userVal === target) {
+      handleSuccess();
+    } else {
+      const analysis = MathEngine.analyzeError(target, { M: m, C: c, D: d, U: u });
+      handleFailure(analysis);
+    }
   }
 
   function calculateTotalAvailableValue() {
     let total = MathEngine.calculateValue(gameState.workbench);
-    
     const carton = document.getElementById('carton-box');
     carton.querySelectorAll('.block-item').forEach(b => {
       let t = b.dataset.type;
       if (t === 'U') total += 1; if (t === 'D') total += 10;
       if (t === 'C') total += 100; if (t === 'M') total += 1000;
     });
-
     gameState.activeBeltItems.forEach(item => {
       if (item.type === 'U') total += 1; if (item.type === 'D') total += 10;
       if (item.type === 'C') total += 100; if (item.type === 'M') total += 1000;
     });
-
     return total;
   }
 
@@ -367,10 +626,12 @@
     const beltContainer = document.getElementById('conveyor-belt-container');
     const badge = document.getElementById('belt-status-badge');
 
-    if (locked) {
-      trackBg.classList.add('paused'); beltContainer.classList.add('belt-locked'); badge.style.display = 'block';
-    } else {
-      trackBg.classList.remove('paused'); beltContainer.classList.remove('belt-locked'); badge.style.display = 'none';
+    if (trackBg && beltContainer && badge) {
+      if (locked) {
+        trackBg.classList.add('paused'); beltContainer.classList.add('belt-locked'); badge.style.display = 'block';
+      } else {
+        trackBg.classList.remove('paused'); beltContainer.classList.remove('belt-locked'); badge.style.display = 'none';
+      }
     }
   }
 
@@ -386,6 +647,7 @@
     const types = config.allowedBeltItems;
     const rType = types[Math.floor(Math.random() * types.length)];
     const container = document.getElementById('conveyor-items');
+    if (!container) return;
     const el = createPackageDOM(rType);
     el.classList.add('belt-item');
     
@@ -430,6 +692,7 @@
   function renderWorkbench() {
     ['M', 'C', 'D', 'U'].forEach(type => {
       const cnt = document.getElementById(`content-${type}`);
+      if (!cnt) return;
       cnt.innerHTML = '';
       for (let i = 0; i < gameState.workbench[type]; i++) {
         const blk = createPackageDOM(type);
@@ -513,73 +776,42 @@
     const analysis = MathEngine.analyzeError(gameState.currentOrderVal, deliveredCounts);
 
     if (analysis.diffs.totalDiff === 0) {
-      // SUCCÈS MATHÉMATIQUE
-      playChiptune('win');
-      let earnedPoints = 100 * gameState.combo;
-      if (analysis.target >= 1000 && gameState.cartonHasApo) earnedPoints += 50;
-
-      gameState.score += earnedPoints;
-      if (!config.trainingMode) gameState.combo++;
-      gameState.superGauge = Math.min(100, gameState.superGauge + 20);
-
-      updateUI();
-      createBurst(window.innerWidth / 2, window.innerHeight / 2, '#00ff66', 30);
-      nextOrder();
+      handleSuccess();
     } else {
-      // ÉCHEC
-      playChiptune('error');
-      gameState.combo = 1;
-      if (!config.trainingMode) gameState.lives--;
-      gameState.errorAttempts++;
-
-      showAdaptiveFeedback(analysis);
-      updateUI();
-
-      if (gameState.lives <= 0 && !config.trainingMode) {
-        alert(`PARTIE TERMINÉE !\nScore obtenu : ${gameState.score}`);
-        location.reload();
-      }
+      handleFailure(analysis);
     }
   }
 
-  /* ==========================================================================
-     6. SYSTÈME DE FEEDBACK ADAPTATIF
-     ========================================================================== */
-  function showAdaptiveFeedback(analysis) {
-    const level = Math.min(5, gameState.errorAttempts);
-    let feedbackHTML = `<strong>Analyse de commande (Tentative ${level}/5) :</strong><br><br>`;
+  function handleSuccess() {
+    playChiptune('win');
+    let earnedPoints = 100 * gameState.combo;
+    if (gameState.currentOrderVal >= 1000 && gameState.cartonHasApo) earnedPoints += 50;
 
-    if (level === 1) {
-      if (analysis.diffs.totalDiff < 0) {
-        feedbackHTML += `Il manque <strong>${Math.abs(analysis.diffs.totalDiff)}</strong> pour atteindre la commande.`;
-      } else {
-        feedbackHTML += `Il y a un surplus de <strong>${analysis.diffs.totalDiff}</strong> par rapport à la commande.`;
-      }
-    } else if (level === 2) {
-      feedbackHTML += `Regarde attentivement le rang des : `;
-      let errs = [];
-      if (analysis.diffs.M !== 0) errs.push("Milliers (M)");
-      if (analysis.diffs.C !== 0) errs.push("Centaines (C)");
-      if (analysis.diffs.D !== 0) errs.push("Dizaines (D)");
-      if (analysis.diffs.U !== 0) errs.push("Unités (U)");
-      feedbackHTML += `<strong>${errs.join(', ')}</strong>.`;
-    } else if (level === 3) {
-      feedbackHTML += `La commande attend :<br>`;
-      feedbackHTML += `• ${analysis.targetDec.M} M | ${analysis.targetDec.C} C | ${analysis.targetDec.D} D | ${analysis.targetDec.U} U<br>`;
-      feedbackHTML += `Tu as actuellement livré une valeur de ${analysis.deliveredVal}.`;
-    } else if (level === 4) {
-      feedbackHTML += `<strong>Comparaison par position :</strong><br>`;
-      feedbackHTML += `• Milliers: attendu ${analysis.targetDec.M}, livré ${analysis.deliveredDec.M}<br>`;
-      feedbackHTML += `• Centaines: attendu ${analysis.targetDec.C}, livré ${analysis.deliveredDec.C}<br>`;
-      feedbackHTML += `• Dizaines: attendu ${analysis.targetDec.D}, livré ${analysis.deliveredDec.D}<br>`;
-      feedbackHTML += `• Unités: attendu ${analysis.targetDec.U}, livré ${analysis.deliveredDec.U}`;
-    } else {
-      feedbackHTML += `<strong>Conseil de fabrication :</strong><br>`;
-      feedbackHTML += `Utilise la zone de travail pour regrouper ou décomposer le matériel avant de le placer dans le carton !`;
-    }
+    gameState.score += earnedPoints;
+    if (!config.trainingMode) gameState.combo++;
+    gameState.superGauge = Math.min(100, gameState.superGauge + 20);
 
+    updateUI();
+    createBurst(window.innerWidth / 2, window.innerHeight / 2, '#00ff66', 30);
+    nextOrder();
+  }
+
+  function handleFailure(analysis) {
+    playChiptune('error');
+    gameState.combo = 1;
+    if (!config.trainingMode) gameState.lives--;
+    gameState.errorAttempts++;
+
+    const feedbackHTML = FeedbackEngine.getFeedback(analysis, gameState.errorAttempts, config.taskMode);
     document.getElementById('inspector-feedback').innerHTML = feedbackHTML;
     document.getElementById('inspector-overlay').style.display = 'flex';
+
+    updateUI();
+
+    if (gameState.lives <= 0 && !config.trainingMode) {
+      alert(`PARTIE TERMINÉE !\nScore final : ${gameState.score}`);
+      location.reload();
+    }
   }
 
   function updateUI() {
@@ -599,6 +831,7 @@
   }
 
   onMount(() => {
+    MathEngine.runSelfTests();
     ctx = canvas.getContext('2d');
     window.addEventListener('resize', resizeCanvas); 
     resizeCanvas();
@@ -662,7 +895,18 @@
       </div>
 
       <div class="config-group">
-        <label class="group-title" for="cfg-min">INTERVALLE DES NOMBRES (1 à 10'000)</label>
+        <label class="group-title" for="cfg-diff-level">PROFIL DE DIFFICULTÉ</label>
+        <select id="cfg-diff-level" style="width: 100%;">
+          <option value="1">Niveau 1 — Nombres simples sans piège (1 - 999)</option>
+          <option value="2">Niveau 2 — Zéros intercalés (ex: 204, 305)</option>
+          <option value="3">Niveau 3 — Grands nombres (1'000 - 5'000)</option>
+          <option value="4">Niveau 4 — Pleine plage avec retenues (1 - 9'999)</option>
+          <option value="5">Niveau 5 — Cas limites (9'999, 10'000)</option>
+        </select>
+      </div>
+
+      <div class="config-group">
+        <label class="group-title" for="cfg-min">INTERVALLE PERSONNALISÉ (1 à 10'000)</label>
         <div class="range-inputs">
           <span>MIN:</span>
           <input type="number" id="cfg-min" value="1" min="1" max="10000">
@@ -740,6 +984,8 @@
      Séparateur (')
   </div>
 </div>
+
+<div id="mode-specific-panel" class="mode-panel" style="display:none;"></div>
 
 <div id="game-container">
   <div id="conveyor-belt-container">
@@ -879,7 +1125,7 @@
   .stat-box { font-size: 5.5pt; color: var(--text-dim); }
   .stat-val { font-size: 8.5pt; color: var(--text); text-shadow: 0 0 8px var(--border-neon); margin-top: 2px; }
 
-  /* BANDEAU COMMANDE XL */
+  /* BANDEAU COMMANDE */
   #order-zone {
     background: #060010; padding: 8px 14px; border-bottom: 3px solid var(--accent-yellow);
     display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 60px;
@@ -893,10 +1139,23 @@
   }
   .order-text { font-size: 7.5pt; color: var(--border-neon); line-height: 1.3; }
 
+  /* PANNEAU SPÉCIFIQUE DES MODES (QCM / DÉCOMPOSITION) */
+  .mode-panel {
+    background: #11052c; border-bottom: 2px solid var(--accent); padding: 10px; text-align: center;
+  }
+  :global(.qcm-title) { font-size: 6.5pt; color: var(--accent-yellow); margin-bottom: 8px; }
+  :global(.qcm-grid) { display: flex; justify-content: center; gap: 10px; }
+  :global(.btn-qcm) {
+    background: var(--panel); border: 2px solid var(--border-neon); color: var(--text);
+    padding: 8px 14px; font-size: 8pt; cursor: pointer; border-radius: 4px;
+  }
+  :global(.decomp-grid) { display: flex; justify-content: center; align-items: center; gap: 12px; font-size: 7pt; }
+  :global(.decomp-grid input) { width: 45px; background: #000; border: 1px solid var(--border-neon); color: #fff; text-align: center; font-size: 8pt; padding: 4px; }
+
   #game-container { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
   #effects-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 40; }
 
-  /* TAPIS ROULANT ET EFFET VERROUILLÉ */
+  /* TAPIS ROULANT */
   #conveyor-belt-container {
     height: 120px; background: #05000e; border-bottom: 3px solid var(--accent); position: relative; overflow: hidden;
     transition: border-color 0.4s, background-color 0.4s;

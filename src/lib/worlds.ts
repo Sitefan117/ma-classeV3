@@ -1,4 +1,14 @@
-export type WorldId = 'livrets' | 'geometrie' | 'calculs' | 'numeria' | 'pcp' | 'convertigo';
+export type WorldId =
+  | 'livrets'
+  | 'geometrie'
+  | 'calculs'
+  | 'numeria'
+  | 'pcp'
+  | 'convertigo'
+  | 'conju_fighter'
+  | 'race'
+  | 'swissgamefactory'
+  | 'mathhunt';
 
 export const worlds: Array<{
   id: WorldId;
@@ -8,6 +18,14 @@ export const worlds: Array<{
   emoji: string;
   color: string;
 }> = [
+  {
+  id: 'race',
+  title: 'Racer',
+  subtitle: 'TEST',
+  route: '/race',
+  emoji: '🏎️',
+  color: 'blue'
+},
   {
     id: 'livrets',
     title: "L'Atelier des Livrets",
@@ -64,14 +82,7 @@ export const worlds: Array<{
     emoji: '🔄',
     color: 'blue'
   },
-  {
-    id: 'race',
-    title: 'Race',
-    subtitle: 'Course avec calcule automatique',
-    route: '/race', // <-- C'est l'adresse URL de ton module
-    emoji: '🔄',
-    color: 'blue'
-  },
+  
   {
     id: 'swissgamefactory',
     title: 'Swiss Game Factory',
