@@ -1090,6 +1090,7 @@
   }
 
   .avatar-badge {
+    
     font-size: 3rem;
   }
 

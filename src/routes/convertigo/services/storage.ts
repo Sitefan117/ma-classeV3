@@ -1,38 +1,48 @@
 import type { PlayerProgress } from '../types/progress';
 
-const STORAGE_KEY = 'numeria_convertigo_progress';
+const STORAGE_KEY = 'convertigo_rpg_progress_v1';
 
-const DEFAULT_PROGRESS: PlayerProgress = {
-  xp: 0,
-  level: 1,
-  unlockedSkills: ['length_basic']
-};
+const emptyBelt = () => ({
+  practiceBest: 0,
+  validated: false,
+  bossDefeated: false
+});
+
+export function defaultProgress(): PlayerProgress {
+  const belts: Record<string, ReturnType<typeof emptyBelt>> = {};
+  for (const grade of ['7H', '8H']) {
+    for (const belt of ['white', 'yellow', 'green', 'blue', 'black']) {
+      belts[`${grade}:${belt}`] = emptyBelt();
+    }
+  }
+  return { xp: 0, level: 1, belts };
+}
 
 export function loadProgress(): PlayerProgress {
-  if (typeof window === 'undefined') return DEFAULT_PROGRESS;
-  
+  if (typeof window === 'undefined') return defaultProgress();
+
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_PROGRESS;
-    return JSON.parse(raw) as PlayerProgress;
+    if (!raw) return defaultProgress();
+
+    const parsed = JSON.parse(raw) as Partial<PlayerProgress>;
+    const base = defaultProgress();
+
+    return {
+      xp: typeof parsed.xp === 'number' ? parsed.xp : base.xp,
+      level: typeof parsed.level === 'number' ? parsed.level : base.level,
+      belts: { ...base.belts, ...(parsed.belts ?? {}) }
+    };
   } catch {
-    return DEFAULT_PROGRESS;
+    return defaultProgress();
   }
 }
 
-export function saveProgress(progress: PlayerProgress): void {
+export function saveProgress(progress: PlayerProgress) {
   if (typeof window === 'undefined') return;
-  
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-  } catch (err) {
-    console.error('Erreur de sauvegarde Convertigo:', err);
-  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
 }
 
-export function resetProgress(): PlayerProgress {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(STORAGE_KEY);
-  }
-  return DEFAULT_PROGRESS;
+export function beltKey(grade: string, belt: string) {
+  return `${grade}:${belt}`;
 }
