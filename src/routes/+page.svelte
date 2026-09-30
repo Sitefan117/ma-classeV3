@@ -527,15 +527,14 @@
      STRUCTURE PRINCIPALE
      ========================================================= */
 
-  .app-layout {
+ .app-layout {
     position: relative;
     z-index: 1;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: 100dvh;
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
   }
 
   .main-content {
