@@ -1,83 +1,61 @@
-import type { TileType, HouseData, NPCData } from '../types/map';
+export interface TileObject {
+  x: number;
+  y: number;
+  type: string;
+}
 
-export const MAP_WIDTH = 24;
-export const MAP_HEIGHT = 18;
+export interface HouseData {
+  id: string;
+  name: string;
+  belt: 'white' | 'yellow' | 'green' | 'blue' | 'black';
+  x: number;
+  y: number;
+  doorX: number;
+  doorY: number;
+  description: string;
+}
 
-// Grille de la carte (24 colonnes x 18 lignes)
-// G: Grass, P: Path, T: Tree, W: Water, B: Bridge, R: Rock, F: Fence, H: House Wall, D: Door, N: NPC
-export const MAP_GRID: TileType[][] = [
-  ['T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T'],
-  ['T','G','G','G','G','T','H','H','H','T','G','G','G','G','T','H','H','H','T','G','G','G','G','T'],
-  ['T','G','G','G','G','T','H','H','H','T','G','G','G','G','T','H','H','H','T','G','G','G','G','T'],
-  ['T','G','G','G','G','T','H','D','H','T','G','G','G','G','T','H','D','H','T','G','G','G','G','T'],
-  ['T','G','G','G','G','P','P','P','P','P','P','P','P','P','P','P','P','P','G','G','G','G','G','T'],
-  ['T','T','T','G','G','P','G','G','G','G','G','W','W','G','G','G','G','P','G','G','T','T','T','T'],
-  ['T','H','H','H','G','P','G','G','G','G','G','W','W','G','G','G','G','P','G','H','H','H','G','T'],
-  ['T','H','H','H','G','P','G','G','N','G','G','B','B','G','G','G','G','P','G','H','H','H','G','T'],
-  ['T','H','D','H','G','P','G','G','G','G','G','W','W','G','G','G','G','P','G','H','D','H','G','T'],
-  ['T','P','P','P','P','P','P','P','P','P','P','P','P','P','P','P','P','P','P','P','P','P','G','T'],
-  ['T','G','G','G','G','P','G','G','G','G','G','W','W','G','G','G','G','P','G','G','G','G','G','T'],
-  ['T','G','G','G','G','P','G','G','G','G','G','W','W','G','G','G','G','P','G','G','G','G','G','T'],
-  ['T','G','G','G','G','P','G','G','G','G','G','W','W','T','H','H','H','P','G','G','G','G','G','T'],
-  ['T','G','G','G','G','P','G','G','G','G','G','W','W','T','H','H','H','P','G','G','G','G','G','T'],
-  ['T','G','G','G','G','P','P','P','P','P','P','B','B','P','P','D','H','P','G','G','G','G','G','T'],
-  ['T','G','G','G','G','G','G','G','G','G','G','W','W','G','G','P','P','P','G','G','G','G','G','T'],
-  ['T','R','R','G','G','G','G','G','G','G','G','W','W','G','G','G','G','G','G','G','R','R','G','T'],
-  ['T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T','T'],
+export interface NPCData {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  dialogue: string;
+}
+
+// Grille 20 colonnes x 15 lignes
+export const GRID_COLS = 20;
+export const GRID_ROWS = 15;
+export const TILE_SIZE = 36; // 36px par case = 720x540px total
+
+// 0 = Marche possible, 1 = Obstacle (Arbre, Eau, Mur), 2 = Interaction (Porte, PNJ, Panneau)
+export const COLLISION_GRID: number[][] = [
+  [1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1],
+  [1, 0, 1, 2, 1, 0, 0, 2, 0, 0, 0, 1, 2, 1, 0, 0, 1, 1, 1, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+  [1, 1, 1, 0, 0, 1, 0, 2, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1],
+  [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1],
+  [1, 1, 1, 1, 0, 1, 1, 2, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1],
+  [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // Rivière / Pont
+  [1, 0, 0, 1, 2, 1, 0, 0, 0, 0, 1, 2, 1, 0, 0, 0, 0, 0, 1, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+  [1, 1, 1, 0, 0, 1, 1, 0, 2, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
-export const HOUSES: Record<string, HouseData> = {
-  white: {
-    id: 'white',
-    belt: 'white',
-    name: 'Maison Blanche — Découvrir',
-    doorX: 7,
-    doorY: 3,
-  },
-  yellow: {
-    id: 'yellow',
-    belt: 'yellow',
-    name: 'Maison Jaune — Construire',
-    doorX: 17,
-    doorY: 3,
-  },
-  green: {
-    id: 'green',
-    belt: 'green',
-    name: 'Maison Verte — Distinguer',
-    doorX: 2,
-    doorY: 8,
-  },
-  blue: {
-    id: 'blue',
-    belt: 'blue',
-    name: 'Maison Bleue — Mesurer',
-    doorX: 20,
-    doorY: 8,
-  },
-  black: {
-    id: 'black',
-    belt: 'black',
-    name: 'Manoir Noir — Maîtriser',
-    doorX: 15,
-    doorY: 14,
-  },
-};
+export const HOUSES: HouseData[] = [
+  { id: 'white', name: 'Maison Blanche', belt: 'white', x: 3, y: 1, doorX: 3, doorY: 2, description: 'Ceinture Blanche : Découvrir les unités de mesure.' },
+  { id: 'yellow', name: 'Maison Jaune', belt: 'yellow', x: 12, y: 1, doorX: 12, doorY: 2, description: 'Ceinture Jaune : Construire le tableau de conversion.' },
+  { id: 'green', name: 'Maison Verte', belt: 'green', x: 7, y: 5, doorX: 7, doorY: 6, description: 'Ceinture Verte : Distinguer longueurs, masses et capacités.' },
+  { id: 'blue', name: 'Maison Bleue', belt: 'blue', x: 4, y: 9, doorX: 4, doorY: 10, description: 'Ceinture Bleue : Mesurer et effectuer des conversions simples.' },
+  { id: 'black', name: 'Maison Noire', belt: 'black', x: 11, y: 9, doorX: 11, doorY: 10, description: 'Ceinture Noire : Maîtriser tous les défis de conversion !' }
+];
 
-export const GUIDE_NPC: NPCData = {
-  id: 'guide_archibald',
-  name: 'Archibald le Sage',
-  x: 8,
-  y: 7,
-  dialogue: [
-    "Bienvenue dans le royaume de Convertigo !",
-    "Je suis Archibald. Pour apprendre les grandeurs et mesures, explore le village.",
-    "Chaque maison correspond à une Ceinture de compétence :",
-    "• Blanche : Découvrir",
-    "• Jaune : Construire",
-    "• Verte : Distinguer",
-    "• Bleue : Mesurer",
-    "• Noire : Maîtriser le grand défi !",
-    "Marche directement sur la porte d'une maison pour y entrer."
-  ],
-};
+export const NPCS: NPCData[] = [
+  { id: 'guide', name: 'Professeur Conversion', x: 7, y: 7, dialogue: 'Bienvenue dans Convertigo ! Explore les 5 maisons des ceintures pour progresser.' },
+  { id: 'assistant', name: 'Assistant', x: 12, y: 6, dialogue: 'N’oublie pas d’utiliser le tableau de conversion en cas de doute !' }
+];

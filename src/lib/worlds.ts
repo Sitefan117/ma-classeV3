@@ -8,7 +8,10 @@ export type WorldId =
   | 'conju_fighter'
   | 'race'
   | 'swissgamefactory'
-  | 'mathhunt';
+  | 'mathhunt'
+  | 'fractionstower1'
+  | 'fractionstower2';
+
 
 export const worlds: Array<{
   id: WorldId;
@@ -91,6 +94,25 @@ export const worlds: Array<{
     emoji: '🎮',
     color: 'green'
   },
+
+  {
+  id: 'fractionstower1',
+  title: 'Fractions Tower 1',
+  subtitle: 'Plateforme de création de jeux vidéo éducatifs.',
+  route: '/fractionstower1', // <-- Bien s'assurer qu'il n'y a PAS de /play ici !
+  emoji: '🎮',
+  color: 'green'
+},
+  
+  {
+    id: 'fractionstower2',
+    title: 'Fractions Tower 2',
+    subtitle: 'Plateforme de création de jeux vidéo éducatifs.',
+    route: '/fractionstower2',
+    emoji: '🎮',
+    color: 'green'
+  },
+  
   {
     id: 'mathhunt',
     title: 'Math Hunt',
@@ -111,5 +133,7 @@ export const worldLabels: Record<WorldId, string> = {
   conju_fighter: 'conju_fighter',
   race: 'race',
   swissgamefactory: 'swissgamefactory',
-  mathhunt: 'mathhunt'
+  mathhunt: 'mathhunt',
+  fractionstower1: 'Tour des Fractions 1',
+  fractionstower2: 'Tour des Fractions 2'
 };
