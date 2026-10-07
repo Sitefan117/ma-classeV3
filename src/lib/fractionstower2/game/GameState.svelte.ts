@@ -16,8 +16,13 @@ export function createGameState() {
 		speed: 4
 	});
 
+	// Progression
+	let defeatedBosses = $state(new Set<string>());
+	let hasElevatorAccess = $state(false);
+
 	let debugMode = $state(false);
 	let currentFloorName = $state('');
+	let isTransitioning = $state(false); // Pour les effets de transition d'étage
 
 	// Initialisation du nom de l'étage
 	const initialFloor = FloorManager.getFloor(player.currentFloorId);
@@ -33,6 +38,30 @@ export function createGameState() {
 		get currentFloorName() { return currentFloorName; },
 		set currentFloorName(val) { currentFloorName = val; },
 
+		get defeatedBosses() { return defeatedBosses; },
+		get hasElevatorAccess() { return hasElevatorAccess; },
+
+		get isTransitioning() { return isTransitioning; },
+		set isTransitioning(val) { isTransitioning = val; },
+
+		markBossDefeated(floorId: string) {
+			defeatedBosses.add(floorId);
+		},
+
+		grantElevatorAccess() {
+			hasElevatorAccess = true;
+		},
+
+		// --- IMPORT / RESTAURATION ---
+		loadSave(playerState: PlayerState, bosses: string[], elevator: boolean) {
+			player = { ...playerState };
+			defeatedBosses = new Set(bosses);
+			hasElevatorAccess = elevator;
+			
+			const floor = FloorManager.getFloor(player.currentFloorId);
+			if (floor) currentFloorName = floor.name;
+		},
+
 		// Mise à jour de la position
 		updatePosition(dx: number, dy: number) {
 			player.position.x += dx;
@@ -43,14 +72,20 @@ export function createGameState() {
 			player.direction = dir;
 		},
 
-		// Changement d'étage
-		changeFloor(floorId: string) {
+		// Changement d'étage avec transition
+		async changeFloor(floorId: string) {
+			isTransitioning = true;
+			// Petit délai pour laisser l'animation de fondu s'opérer
+			await new Promise(resolve => setTimeout(resolve, 500));
+			
 			const nextFloor = FloorManager.getFloor(floorId);
 			if (nextFloor) {
 				player.currentFloorId = floorId;
 				player.position = { ...nextFloor.spawnPoint };
 				currentFloorName = nextFloor.name;
 			}
+			
+			isTransitioning = false;
 		}
 	};
 }

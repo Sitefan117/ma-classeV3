@@ -1,188 +1,256 @@
 <script lang="ts">
-  import { base } from '$app/paths';
-  import type { ActionData, PageData } from './$types';
+	import { languageState } from '$lib/fractionstower2/persistence/LanguageManager';
+	import { SaveManager, type SaveData } from '$lib/fractionstower2/persistence/SaveManager';
 
-  export let data: PageData;
-  export let form: ActionData;
+	let isAuthenticated = $state(false);
+	let password = $state('');
+	let students = $state<SaveData[]>([]);
+	
+	const TEACHER_PASSWORD = 'admin';
 
-  let search = '';
-  let worldFilter = 'all';
+	function login() {
+		if (password === TEACHER_PASSWORD) {
+			isAuthenticated = true;
+		} else {
+			alert(languageState.current === 'fr-FR' ? "Mot de passe incorrect." : "Неверный пароль.");
+		}
+	}
 
-  $: filteredResults = data.results.filter((result) => {
-    const term = search.trim().toLocaleLowerCase('fr-FR');
-    const matchesStudent = !term || result.studentName.toLocaleLowerCase('fr-FR').includes(term);
-    const matchesWorld = worldFilter === 'all' || result.world === worldFilter;
-    return matchesStudent && matchesWorld;
-  });
+	async function handleFileUpload(e: Event) {
+		const target = e.target as HTMLInputElement;
+		if (!target.files) return;
 
-  $: worlds = Array.from(new Set(data.results.map((result) => result.world))).sort();
+		const files = Array.from(target.files);
+		for (const file of files) {
+			const data = await SaveManager.importSave(file);
+			if (data) {
+				if (!students.find(s => s.studentId === data.studentId && data.timestamp === s.timestamp)) {
+					students.push(data);
+				}
+			}
+		}
+	}
 
-  function rate(score: number, total: number): number {
-    return total > 0 ? Math.round((score / total) * 100) : 0;
-  }
+	function clearStudents() {
+		students = [];
+	}
 
-  function rateClass(score: number, total: number): string {
-    const percent = rate(score, total);
-    if (percent >= 80) return 'score-pill good';
-    if (percent >= 50) return 'score-pill mid';
-    return 'score-pill low';
-  }
+	/**
+	 * EXPORT EXCEL (CSV)
+	 * Convertit la liste des élèves en format CSV compatible Excel.
+	 */
+	function exportToExcel() {
+		if (students.length === 0) {
+			alert(languageState.current === 'fr-FR' ? "Aucune donnée à exporter." : "Нет данных для экспорта.");
+			return;
+		}
 
-  function formatDate(timestamp: number): string {
-    return new Date(timestamp).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-  }
+		const headers = [
+			languageState.current === 'fr-FR' ? 'Eleve' : 'Ученик',
+			languageState.current === 'fr-FR' ? 'Etage' : 'Этаж',
+			languageState.current === 'fr-FR' ? 'Bosses Vaincus' : 'Побежденные боссы',
+			languageState.current === 'fr-FR' ? 'Acces Ascenseur' : 'Доступ к лифту',
+			languageState.current === 'fr-FR' ? 'Statut' : 'Статус'
+		];
+
+		const rows = students.map(s => {
+			const status = s.defeatedBosses.length === 8 
+				? (languageState.current === 'fr-FR' ? 'Terminé' : 'Завершено')
+				: (s.defeatedBosses.length === 0 
+					? (languageState.current === 'fr-FR' ? 'Débutant' : 'Новичок') 
+					: (languageState.current === 'fr-FR' ? 'En cours' : 'В процессе'));
+
+			return [
+				`"${s.studentId}"`, 
+				`"${s.player.currentFloorId}"`, 
+				s.defeatedBosses.length, 
+				s.hasElevatorAccess ? 'Oui' : 'Non', 
+				`"${status}"`
+			].join(',');
+		});
+
+		const csvContent = [headers.join(','), ...rows].join('\n');
+		const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+		const url = URL.createObjectURL(blob);
+		
+		const link = document.createElement('a');
+		link.setAttribute('href', url);
+		link.setAttribute('download', `rapport_fractions_${new Date().toISOString().slice(0,10)}.csv`);
+		link.click();
+		
+		URL.revokeObjectURL(url);
+	}
 </script>
 
-<svelte:head>
-  <title>Tableau enseignant — Classe Numérique</title>
-</svelte:head>
+{#if !isAuthenticated}
+	<div class="login-container">
+		<div class="login-card">
+			<h1>{languageState.current === 'fr-FR' ? 'Espace Enseignant' : 'Пространство учителя'}</h1>
+			<p>{languageState.current === 'fr-FR' ? 'Veuillez entrer le mot de passe pour accéder au tableau de bord.' : 'Пожалуйста, введите пароль для доступа к панели управления.'}</p>
+			<input type="password" bind:value={password} placeholder="Mot de passe..." />
+			<button onclick={login}>{languageState.current === 'fr-FR' ? 'Se connecter' : 'Войти'}</button>
+		</div>
+	</div>
+{:else}
+	<div class="teacher-container">
+		<header>
+			<h1>{languageState.current === 'fr-FR' ? 'Tableau de Bord des Élèves' : 'Панель управления учениками'}</h1>
+			<div class="actions">
+				<label class="import-btn">
+					{languageState.current === 'fr-FR' ? '📂 Importer' : '📂 Импортировать'}
+					<input type="file" multiple accept=".fracsave" onchange={handleFileUpload} />
+				</label>
+				<button class="excel-btn" onclick={exportToExcel}>
+					{languageState.current === 'fr-FR' ? '📊 Export Excel' : '📊 Экспорт в Excel'}
+				</button>
+				<button class="clear-btn" onclick={clearStudents}>
+					{languageState.current === 'fr-FR' ? '🗑️ Effacer' : '🗑️ Очистить'}
+				</button>
+			</div>
+		</header>
 
-<div class="page">
-  <header class="header">
-    <div class="header-inner">
-      <div class="brand">
-        <span class="brand-icon">📋</span>
-        <div>
-          <h1 class="brand-title">Suivi des Résultats</h1>
-          <p class="brand-subtitle">SQLite local, session enseignant protégée</p>
-        </div>
-      </div>
-      <div class="actions no-print">
-        <a class="btn ghost" href="{base}/">↩ QG</a>
-        <form method="POST" action="/teacher/logout">
-          <button class="btn ghost" type="submit">Déconnexion</button>
-        </form>
-      </div>
-    </div>
-  </header>
+		{#if students.length === 0}
+			<div class="empty-state">
+				<p>{languageState.current === 'fr-FR' ? 'Aucune donnée d\'élève importée.' : 'Данные учеников не импортированы.'}</p>
+			</div>
+		{:else}
+			<div class="dashboard">
+				<table>
+					<thead>
+						<tr>
+							<th>{languageState.current === 'fr-FR' ? 'Élève' : 'Ученик'}</th>
+							<th>{languageState.current === 'fr-FR' ? 'Étage' : 'Этаж'}</th>
+							<th>{languageState.current === 'fr-FR' ? 'Bosses Vaincus' : 'Побежденные боссы'}</th>
+							<th>{languageState.current === 'fr-FR' ? 'Accès Ascenseur' : 'Доступ к лифту'}</th>
+							<th>{languageState.current === 'fr-FR' ? 'Statut' : 'Статус'}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each students as s}
+							<tr class={s.defeatedBosses.length < 2 ? 'warning' : ''}>
+								<td><strong>{s.studentId}</strong></td>
+								<td>{s.player.currentFloorId.replace('floor-', 'Étage ')}</td>
+								<td>{s.defeatedBosses.length} / 8</td>
+								<td>{s.hasElevatorAccess ? '✅' : '❌'}</td>
+								<td>
+									{#if s.defeatedBosses.length === 8}
+										<span class="status-complete">{languageState.current === 'fr-FR' ? 'Terminé' : 'Завершено'}</span>
+									{:else if s.defeatedBosses.length === 0}
+										<span class="status-stuck">{languageState.current === 'fr-FR' ? 'Débutant' : 'Новичок'}</span>
+									{:else}
+										<span class="status-progress">{languageState.current === 'fr-FR' ? 'En cours' : 'В процессе'}</span>
+									{/if}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+	</div>
+{/if}
 
-  <main class="main stack">
-    <section class="grid world-grid">
-      <div class="card compact">
-        <div class="kicker">Élèves suivis</div>
-        <strong style="font-size: 2rem;">{data.students.length}</strong>
-      </div>
-      <div class="card compact">
-        <div class="kicker">Résultats enregistrés</div>
-        <strong style="font-size: 2rem;">{data.results.length}</strong>
-      </div>
-      <div class="card compact">
-        <div class="kicker">Progressions monde/mission</div>
-        <strong style="font-size: 2rem;">{data.progress.length}</strong>
-      </div>
-    </section>
+<style>
+	:global(body) {
+		margin: 0;
+		padding: 0;
+		background-color: #121212;
+		color: white;
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	}
 
-    <section class="card stack no-print">
-      <div class="mission-top">
-        <div>
-          <h2>Recherche intervention</h2>
-          <p class="muted small">Filtrer rapidement pour repérer les besoins d’aide.</p>
-        </div>
-        <div class="actions">
-          <input class="input" style="width: 18rem;" bind:value={search} placeholder="Rechercher un élève..." />
-          <select class="select" style="width: 16rem;" bind:value={worldFilter}>
-            <option value="all">Tous les mondes</option>
-            {#each worlds as world}
-              <option value={world}>{world}</option>
-            {/each}
-          </select>
-        </div>
-      </div>
-    </section>
+	.login-container {
+		height: 100vh;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background: radial-gradient(circle, #2c3e50 0%, #000000 100%);
+	}
+	.login-card {
+		background: rgba(255, 255, 255, 0.1);
+		padding: 2rem;
+		border-radius: 15px;
+		backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		text-align: center;
+		width: 400px;
+		box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+	}
+	.login-card h1 { color: #ffcc00; margin-bottom: 1rem; }
+	.login-card input {
+		width: 80%;
+		padding: 10px;
+		margin: 20px 0;
+		border-radius: 5px;
+		border: none;
+		text-align: center;
+		font-size: 1rem;
+	}
+	.login-card button {
+		background: #ffcc00;
+		color: #000;
+		border: none;
+		padding: 10px 20px;
+		border-radius: 5px;
+		font-weight: bold;
+		cursor: pointer;
+	}
 
-    <section class="card stack">
-      <h2>Résultats récents</h2>
-      <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Élève</th>
-              <th>Monde</th>
-              <th>Mission</th>
-              <th>Score</th>
-              <th>Réussite</th>
-              <th>Erreurs</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#if filteredResults.length === 0}
-              <tr><td colspan="7" class="center muted">Aucun résultat pour ces filtres.</td></tr>
-            {:else}
-              {#each filteredResults as result}
-                <tr>
-                  <td><strong>{result.studentName}</strong></td>
-                  <td>{result.world}</td>
-                  <td>{result.mission}</td>
-                  <td><strong>{result.score} / {result.total}</strong> <span class="muted small">({result.scoreBasis})</span></td>
-                  <td><span class={rateClass(result.score, result.total)}>{rate(result.score, result.total)}%</span></td>
-                  <td>{result.errorCount}{#if result.errorFamilies}<br /><span class="muted small">{result.errorFamilies}</span>{/if}</td>
-                  <td>{formatDate(result.createdAt)}</td>
-                </tr>
-              {/each}
-            {/if}
-          </tbody>
-        </table>
-      </div>
-    </section>
+	.teacher-container {
+		padding: 2rem;
+		max-width: 1200px;
+		margin: auto;
+	}
+	header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 2rem;
+		border-bottom: 2px solid #333;
+		padding-bottom: 1rem;
+	}
+	header h1 { color: #ffcc00; }
+	.actions { display: flex; gap: 15px; align-items: center; }
+	.import-btn, .clear-btn, .excel-btn {
+		padding: 10px 20px;
+		border-radius: 8px;
+		cursor: pointer;
+		font-weight: bold;
+		font-size: 0.9rem;
+		border: none;
+	}
+	.import-btn { background: #1976d2; color: white; }
+	.excel-btn { background: #2e7d32; color: white; }
+	.clear-btn { background: #d32f2f; color: white; }
+	.import-btn input { display: none; }
 
-    <section class="split">
-      <div class="card stack">
-        <h2>Progression par monde</h2>
-        <div class="table-wrap">
-          <table class="table">
-            <thead><tr><th>Élève</th><th>Monde</th><th>Mission</th><th>Meilleur</th><th>Dernier</th><th>Essais</th></tr></thead>
-            <tbody>
-              {#each data.progress as progress}
-                <tr>
-                  <td>{progress.studentName}</td>
-                  <td>{progress.world}</td>
-                  <td>{progress.mission}</td>
-                  <td>{progress.bestScore} / {progress.total}</td>
-                  <td>{progress.lastScore} / {progress.total}</td>
-                  <td>{progress.completions}</td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      </div>
+	.empty-state {
+		text-align: center;
+		padding: 100px 0;
+		opacity: 0.6;
+		font-style: italic;
+	}
 
-      <div class="card stack no-print">
-        <h2>Notes enseignant</h2>
-        {#if form?.message}<p class="feedback good">{form.message}</p>{/if}
-        <form method="POST" action="?/addNote" class="stack">
-          <label class="label">
-            Élève concerné
-            <select class="select" name="studentId">
-              <option value="">Note générale</option>
-              {#each data.students as student}
-                <option value={student.id}>{student.displayName}</option>
-              {/each}
-            </select>
-          </label>
-          <label class="label">
-            Monde / activité
-            <input class="input" name="world" placeholder="ex: geometrie, livrets..." />
-          </label>
-          <label class="label">
-            Intervention prévue
-            <textarea class="textarea" name="body" required placeholder="Besoin repéré, relance, groupe de soutien..."></textarea>
-          </label>
-          <button class="btn primary" type="submit">Ajouter la note</button>
-        </form>
-
-        <div class="stack">
-          {#each data.notes as note}
-            <article class="card compact">
-              <strong>{note.studentName ?? 'Note générale'}</strong>
-              {#if note.world}<span class="badge">{note.world}</span>{/if}
-              <p>{note.body}</p>
-              <p class="muted small">{formatDate(note.createdAt)}</p>
-            </article>
-          {/each}
-        </div>
-      </div>
-    </section>
-  </main>
-</div>
+	.dashboard {
+		background: #1e1e1e;
+		padding: 20px;
+		border-radius: 12px;
+		border: 1px solid #333;
+		box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+	}
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		text-align: left;
+	}
+	th, td {
+		padding: 15px;
+		border-bottom: 1px solid #333;
+	}
+	th { color: #aaa; font-weight: normal; text-transform: uppercase; font-size: 0.8rem; }
+	tr.warning { background: rgba(255, 0, 0, 0.05); }
+	
+	.status-complete { color: #4caf50; font-weight: bold; }
+	.status-progress { color: #ffcc00; }
+	.status-stuck { color: #ff5252; }
+</style>
