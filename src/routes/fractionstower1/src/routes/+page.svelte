@@ -1,8 +1,8 @@
 <!-- Accueil et sélection / écran principal de Fractions Tower -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { GameStateController } from '$lib/game/GameState';
-  import { DEMO_FLOOR_01 } from '$lib/data/floors';
+  import { GameStateController } from '../../lib/game/GameState';
+  import { DEMO_FLOOR_01 } from '../../lib/data/floors';
 
   // Instanciation du contrôleur de jeu
   const game = new GameStateController(DEMO_FLOOR_01);

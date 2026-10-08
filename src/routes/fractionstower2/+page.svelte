@@ -1,11 +1,11 @@
 <script>
-	import { page } from '$app/stores';
+	import { base } from '$app/paths';
 </script>
 
 <div class="container">
 	<h1>Fractions Tower</h1>
 	<p>Bienvenue dans la tour des fractions !</p>
-	<a href="/fractionstower2/play" class="btn">Commencer l'aventure</a>
+	<a href={base + '/fractionstower2/play'} class="btn">Commencer l'aventure</a>
 </div>
 
 <style>

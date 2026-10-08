@@ -1,10 +1,12 @@
 <!-- Vue principale du jeu 2D (Monde, Carte, Personnage et Interface) -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { GameStateController } from '$lib/game/GameState';
-  import { DEMO_FLOOR_01 } from '$lib/data/floors';
-  import ActivityModal from '$lib/components/exercises/ActivityModal.svelte';
-  import type { InteractionZone } from '$lib/types/interaction';
+  // Cette route historique vit sous `fractionstower1/src/routes` : `$lib`
+  // pointe vers la bibliothèque globale de l'application, pas vers celle-ci.
+  import { GameStateController } from '../../../lib/game/GameState';
+  import { DEMO_FLOOR_01 } from '../../../lib/data/floors';
+  import ActivityModal from '../../../lib/components/exercises/ActivityModal.svelte';
+  import type { InteractionZone } from '../../../lib/types/interaction';
 
   const game = new GameStateController(DEMO_FLOOR_01);
 

@@ -25,7 +25,7 @@ export function createGameState() {
 	let isTransitioning = $state(false); // Pour les effets de transition d'étage
 
 	// Initialisation du nom de l'étage
-	const initialFloor = FloorManager.getFloor(player.currentFloorId);
+	const initialFloor = FloorManager.getFloor('floor-1');
 	if (initialFloor) currentFloorName = initialFloor.name;
 
 	return {

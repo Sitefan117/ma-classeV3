@@ -12,14 +12,17 @@
 	}>();
 
 	let state = $state<BossState>(BossEngine.createInitialState());
-	let currentExercise = $state(BossEngine.generateQuestion(floorId, state.currentPhase, state.currentQuestionIndex));
+	function generateCurrentExercise() {
+		return BossEngine.generateQuestion(floorId, state.currentPhase, state.currentQuestionIndex);
+	}
+	let currentExercise = $state(generateCurrentExercise());
 	
 	let userInputNum = $state<string>('');
 	let userInputDen = $state<string>('');
 	let comparisonChoice = $state<string>('');
 	let showAid = $state(false);
 
-	let numInputRef: HTMLInputElement | null = null;
+	let numInputRef = $state<HTMLInputElement | null>(null);
 
 	async function handleAnswer() {
 		let isCorrect = false;
@@ -64,7 +67,7 @@
 			return;
 		}
 
-		currentExercise = BossEngine.generateQuestion(floorId, state.currentPhase, state.currentQuestionIndex);
+		currentExercise = generateCurrentExercise();
 		userInputNum = '';
 		userInputDen = '';
 		comparisonChoice = '';
