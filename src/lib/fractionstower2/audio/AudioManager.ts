@@ -45,4 +45,28 @@ export class AudioManager {
 			this.bgm = null;
 		}
 	}
+
+	/** Compatibilité avec les écrans de combat : joue une musique déjà chargée. */
+	static playMusic(id: string, volume = 0.5) {
+		this.playSound(id, volume);
+	}
+
+	/** Compatibilité avec les écrans de combat. */
+	static stopMusic() {
+		this.stopBGM();
+	}
+
+	/** Lit une consigne avec la synthèse vocale du navigateur, si elle existe. */
+	static speak(text: string, lang = 'fr-FR') {
+		if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+		try {
+			window.speechSynthesis.cancel();
+			const utterance = new SpeechSynthesisUtterance(text);
+			utterance.lang = lang;
+			window.speechSynthesis.speak(utterance);
+		} catch (error) {
+			console.warn('La synthèse vocale est indisponible dans ce navigateur.', error);
+		}
+	}
 }

@@ -21,10 +21,13 @@
 	let userInputDen = $state<string>('');
 	let comparisonChoice = $state<string>('');
 	let showAid = $state(false);
+	let isSubmitting = $state(false);
 
 	let numInputRef = $state<HTMLInputElement | null>(null);
 
 	async function handleAnswer() {
+		if (isSubmitting) return;
+		isSubmitting = true;
 		let isCorrect = false;
 
 		if (currentExercise.type === 'input') {
@@ -75,18 +78,22 @@
 
 		await tick();
 		numInputRef?.focus();
+		isSubmitting = false;
 	}
 
-	onMount(async () => {
+	function readQuestion() {
+		AudioManager.speak(currentExercise.question, languageState.current);
+	}
+
+	onMount(() => {
 		// Start boss music
 		AudioManager.playMusic('bg_boss');
-		
-		await tick();
-		numInputRef?.focus();
+		void tick().then(() => numInputRef?.focus());
 
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === 'Enter') {
-				handleAnswer();
+				e.preventDefault();
+				void handleAnswer();
 			}
 		};
 		window.addEventListener('keydown', handleKeyDown);
@@ -112,6 +119,7 @@
 
 	<div class="question-area">
 		<h2 class="question-text">{currentExercise.question}</h2>
+		<button class="audio-btn" onclick={readQuestion} title="Lire la consigne">🔊</button>
 		
 		<button class="aid-btn" onclick={() => showAid = !showAid}>
 			{showAid 
@@ -148,7 +156,7 @@
 			</div>
 		{/if}
 
-		<button class="submit-btn" onclick={handleAnswer}>
+		<button class="submit-btn" onclick={handleAnswer} disabled={isSubmitting}>
 			{languageState.current === 'fr-FR' ? 'Valider (Entrée)' : 'Подтвердить (Enter)'}
 		</button>
 	</div>
@@ -227,6 +235,16 @@
 		cursor: pointer;
 		font-size: 0.9rem;
 		transition: all 0.2s;
+	}
+	.audio-btn {
+		background: #444;
+		color: white;
+		border: 1px solid #aaa;
+		border-radius: 50%;
+		width: 36px;
+		height: 36px;
+		cursor: pointer;
+		font-size: 1rem;
 	}
 	.aid-btn:hover {
 		background: #ffcc00;

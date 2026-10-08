@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { languageState } from '$lib/fractionstower2/persistence/LanguageManager';
 
 	let { floorId, onClose } = $props<{

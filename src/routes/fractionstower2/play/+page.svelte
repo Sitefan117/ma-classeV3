@@ -26,12 +26,14 @@
 		'door': 'P',
 		'npc': 'P',
 		'course-intro': 'T',
+		'classic-course-intro': 'C',
 		'training-intro': 'E',
 		'boss-intro': 'B'
 	};
 
 	const npcColors: Record<string, string> = {
 		'course-intro': '#ffcc00', // Jaune pour le Guide Académique
+		'classic-course-intro': '#7c3aed', // Violet pour le parcours classique
 		'training-intro': '#4caf50', // Vert pour l'Entraîneur
 		'boss-intro': '#f44336'    // Rouge pour le Boss
 	};

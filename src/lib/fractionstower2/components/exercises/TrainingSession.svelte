@@ -5,16 +5,14 @@
 
 	import { onMount } from 'svelte';
 	import { ExerciseGenerator } from '$lib/fractionstower2/engines/ExerciseGenerator';
-	import { FractionEngine } from '$lib/fractionstower2/engines/FractionEngine';
 	import FractionCircle from '$lib/fractionstower2/components/fraction/FractionCircle.svelte';
 	import FractionBar from '$lib/fractionstower2/components/fraction/FractionBar.svelte';
 	import Fraction from '$lib/fractionstower2/components/fraction/Fraction.svelte';
 	import { AudioManager } from '$lib/fractionstower2/audio/AudioManager';
 	import { t } from '$lib/fractionstower2/persistence/LanguageManager';
 
-	let { onComplete, game } = $props<{
+	let { onComplete } = $props<{
 		onComplete: () => void;
-		game: any;
 	}>();
 
 	let inputRef: HTMLInputElement | undefined = $state();
@@ -34,9 +32,12 @@
 	let userAnswer = $state("");
 	let feedback = $state("");
 	let score = $state(0);
-	let totalExercises = 10;
+	const totalExercises = 10;
+	let isAdvancing = $state(false);
 
 	function checkAnswer() {
+		if (isAdvancing) return;
+
 		const val = parseInt(userAnswer);
 		if (isNaN(val)) {
 			feedback = "S'il te plaît, écris un nombre.";
@@ -46,6 +47,7 @@
 		if (val === currentExercise.fraction.numerator) {
 			feedback = t('feedback.correct');
 			score += 1;
+			isAdvancing = true;
 			setTimeout(nextExercise, 1500);
 		} else {
 			feedback = t('feedback.wrong');
@@ -54,8 +56,14 @@
 	}
 
 	function nextExercise() {
+		if (score >= totalExercises) {
+			onComplete();
+			return;
+		}
+
 		feedback = "";
 		userAnswer = "";
+		isAdvancing = false;
 		currentExercise = {
 			fraction: ExerciseGenerator.generateRandomFraction(config),
 			attempt: 0,
@@ -70,14 +78,6 @@
 			}
 		}, 50);
 
-		if (score >= totalExercises) {
-			const compId = 'lecture-fractions-1';
-			const currentState = game.competencies[compId] || {
-				successes: 0, failures: 0, lastStatus: 'RED', history: []
-			};
-			game.competencies[compId] = MasteryEngine.updateCompetence(currentState, true);
-			onComplete();
-		}
 	}
 
 	function readQuestion() {
@@ -142,7 +142,7 @@
 			<span class="den"> / <Fraction denominator={currentExercise.fraction.denominator} /></span>
 		</div>
 
-		<button class="btn" onclick={checkAnswer}>Vérifier</button>
+		<button class="btn" onclick={checkAnswer} disabled={isAdvancing}>Vérifier</button>
 		<p class="feedback">{feedback}</p>
 	</div>
 </div>

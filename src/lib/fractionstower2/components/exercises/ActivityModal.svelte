@@ -28,6 +28,8 @@
 			<h2 style="margin: 0; font-size: 1.5rem;">
 				{#if activityId === 'course-intro' || activityId === 'mission-course'}
 					Le Cours : Les Bases
+				{:else if activityId === 'classic-course-intro'}
+					Parcours classique
 				{:else if activityId === 'training-intro' || activityId === 'mission-training'}
 					Entraînement : Lecture
 				{:else if activityId === 'boss-intro' || activityId === 'mission-boss'}
@@ -42,8 +44,14 @@
 		<div class="body">
 			{#if activityId === 'course-intro' || activityId === 'mission-course'}
 				<IntroCourse onComplete={onClose} />
+			{:else if activityId === 'classic-course-intro'}
+				<div class="fallback">
+					<p>Le parcours classique arrivera bientôt.</p>
+					<p>Il proposera un cours structuré en neuf étapes, une par étage.</p>
+					<button class="action-btn" onclick={onClose}>Retour</button>
+				</div>
 			{:else if activityId === 'training-intro' || activityId === 'mission-training'}
-				<TrainingSession onComplete={onClose} {game} />
+				<TrainingSession onComplete={onClose} />
 			{:else if activityId === 'boss-intro' || activityId === 'mission-boss'}
 				<BossFloor1 onComplete={onClose} {game} />
 			{:else}

@@ -4,6 +4,7 @@
 // -----------------------------------------------------------------------------
 
 import { type FloorData } from '$lib/fractionstower2/types/world';
+import { ACTIVE_FLOOR_CURRICULUM } from '$lib/fractionstower2/data/curriculum';
 
 export class FloorManager {
 	private static floors: Record<string, FloorData> = {};
@@ -71,6 +72,12 @@ export class FloorManager {
 					type: 'pedagogical',
 					x: 800, y: 150, width: 60, height: 60,
 					action: 'boss-intro'
+				},
+				{
+					id: `mission-classic-course-${floorNum}`,
+					type: 'pedagogical',
+					x: 700, y: 600, width: 60, height: 60,
+					action: 'classic-course-intro'
 				}
 			],
 			visuals: []
@@ -78,20 +85,12 @@ export class FloorManager {
 	}
 
 	static {
-		const floorNames = [
-			'Premier Étage - Découverte',
-			'Deuxième Étage - Entraînement',
-			'Troisième Étage - Pratique',
-			'Quatrième Étage - Consolidation',
-			'Cinquième Étage - Maîtrise',
-			'Sixième Étage - Expertise',
-			'Septième Étage - Défi',
-			'Huitième Étage - Sommet'
-		];
-
-		for (let i = 1; i <= 8; i++) {
-			const id = `floor-${i}`;
-			this.floors[id] = this.createFloorTemplate(id, floorNames[i-1], i);
+		for (const floor of ACTIVE_FLOOR_CURRICULUM) {
+			this.floors[floor.id] = this.createFloorTemplate(
+				floor.id,
+				`Étage ${floor.number} — ${floor.title}`,
+				floor.number
+			);
 		}
 	}
 
