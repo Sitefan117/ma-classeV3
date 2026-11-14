@@ -101,6 +101,8 @@
   let printKind: 'exercise' | 'vocabulary' = 'exercise';
   let responseDetails: ResponseDetail[] = [];
   let vocabularyProgress: VocabularyProgress = {};
+  const audioWords = new Set(['actions-boire','actions-dormir','actions-manger','actions-marcher','actions-s-habiller','actions-se-lever','actions-se-reveiller','alimentation-banane','alimentation-fromage','alimentation-lait','alimentation-pain','alimentation-pates','alimentation-pomme','alimentation-riz','corps-bouche','corps-dent','corps-main','corps-nez','corps-oeil','corps-oreille','corps-pied','ecole-bibliotheque','ecole-cahier','ecole-cartable','ecole-classe','ecole-ecole','ecole-recreation','ecole-tableau','emotions-calme','emotions-content','emotions-fatigue','emotions-fier','emotions-inquiet','emotions-surpris','emotions-triste','famille-famille','famille-frere','famille-grand-mere','famille-mere','famille-parent','famille-pere','famille-soeur','logement-bail','logement-charges','logement-garantie-de-loyer','logement-locataire','logement-loyer','logement-proprietaire','logement-regie','maison-chaise','maison-cle','maison-fenetre','maison-lit','maison-maison','maison-porte','maison-table','temps-annee','temps-jour','temps-lundi','temps-mardi','temps-mercredi','temps-mois','temps-semaine','ville-bus','ville-feu-de-circulation','ville-gare','ville-passage-pieton','ville-train','ville-tram','ville-velo']);
+  let audioVoice: 'eddy' | 'flo' = 'eddy';
 
   $: categories = getCategories(bank);
   $: selectedCount = bank.filter((entry) => selectedThemes.includes(entry.theme)).length;
@@ -114,6 +116,7 @@
   let alphabet: string[] = [];
   $: visibleVocabulary = distinctWords(playing).sort((a, b) => a.word.localeCompare(b.word, 'fr'));
   $: mastery = masterySummary(vocabularyProgress);
+  function audioPath(entry: Word) { return audioWords.has(entry.id) ? `${base}/audio/musee-vocabulaire/${entry.id}-${audioVoice}.aiff` : ''; }
   $: matchImages = options;
 
   function getCategories(entries: Word[]) {
@@ -522,7 +525,10 @@
     {#if wordListOpen}
       <section class="word-bank" aria-label="Liste des mots choisis">
         <div><h2>Les mots de mes thèmes</h2><p>Tu peux regarder l’orthographe et le sens d’un mot.</p></div>
-        <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong><span>{entry.definition}</span></li>{/each}</ul>
+        <label class="audio-choice">Voix
+          <select bind:value={audioVoice}><option value="eddy">Voix 1</option><option value="flo">Voix 2</option></select>
+        </label>
+        <ul>{#each visibleVocabulary as entry (entry.id)}<li><strong>{entry.word}</strong><span>{entry.definition}</span>{#if audioPath(entry)}<audio controls preload="none" src={audioPath(entry)} aria-label={`Écouter ${entry.word}`}></audio>{/if}</li>{/each}</ul>
       </section>
     {/if}
     <section class="game" aria-label={modeLabels[mode]}>
