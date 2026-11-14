@@ -1,6 +1,7 @@
 <script lang="ts">
   import { copyStudentSave, listRemoteActivityEvents, listRemoteGameSaves, type OrbisClass, type OrbisStudent, type RemoteActivityEvent, type RemoteGameSave } from './remote';
   import { resultRowsToCsv, resultRowsToPdf, safeExportPart, type ResultExportRow } from './result-export';
+  import { skillLabel, taxonomyFor } from './learning-taxonomy';
 
   let { classes, students, documents = [] }: { classes: OrbisClass[]; students: OrbisStudent[]; documents?: Array<{ student_id: string; document_kind: 'cv' | 'letter'; content: Record<string, string>; updated_at: string }> } = $props();
   let activities = $state<RemoteActivityEvent[]>([]);
@@ -68,7 +69,12 @@
     groups[family] = (groups[family] ?? 0) + count; return groups;
   }, {})).map(([family, count]) => ({ family, count })).sort((a, b) => b.count - a.count).slice(0, 6));
   const selectedDocuments = $derived(selectedStudent ? documents.filter((item) => item.student_id === selectedStudent.user_id) : []);
-  const selectedResponses = $derived(selectedStudentActivities.flatMap((activity) => activity.response_details ?? []).slice(0, 80));
+  const selectedResponses = $derived(selectedStudentActivities.flatMap((activity) => (activity.response_details ?? []).map((response) => ({
+    ...response,
+    game: activity.game_id,
+    activity: activity.activity_id,
+    skill: activity.skill_id
+  }))).slice(0, 120));
   const trendRows = $derived(Object.entries(filteredActivities.reduce<Record<string, { correct: number; total: number }>>((groups, item) => {
     const day = item.occurred_at.slice(0, 10);
     const group = groups[day] ?? { correct: 0, total: 0 };
@@ -204,7 +210,7 @@
     <article class="panel student-detail">
       <div class="detail-heading"><div><p class="eyebrow">FICHE ÉLÈVE</p><h3>{selectedStudent.display_name}</h3><p>Code : {selectedStudent.login_id}</p></div><button class="secondary" onclick={() => chooseStudent('all')}>Fermer la fiche</button></div>
       <div class="detail-grid">
-        <section><h4>Compétences et activités</h4><p class="teacher-summary">{studentSummary}</p>{#if skillRows.length}<div class="bars">{#each skillRows as row}<div class="skill-row"><span><strong>{gameName(row.skill)}</strong><small>{row.correct}/{row.total} · {row.errors} erreur(s) · {row.hints} indice(s)</small></span><span class="track"><i style={`width:${row.rate}%`}></i></span><b>{row.rate}%</b></div>{/each}</div>{:else}<p class="empty">Pas encore de résultat synchronisé.</p>{/if}</section>
+        <section><h4>Compétences et activités</h4><p class="teacher-summary">{studentSummary}</p>{#if skillRows.length}<div class="bars">{#each skillRows as row}<div class="skill-row"><span><strong>{skillLabel(row.skill)}</strong><small>{taxonomyFor(row.skill)?.category ?? 'Catégorie à préciser'} · {row.correct}/{row.total} · {row.errors} erreur(s) · {row.hints} indice(s)</small></span><span class="track"><i style={`width:${row.rate}%`}></i></span><b>{row.rate}%</b></div>{/each}</div>{:else}<p class="empty">Pas encore de résultat synchronisé.</p>{/if}</section>
         <section><h4>Points à observer</h4>{#if frequentErrors.length}<ul class="error-list">{#each frequentErrors as error}<li><span>{gameName(error.family)}</span><b>{error.count}</b></li>{/each}</ul>{:else}<p class="empty">Aucune famille d’erreur disponible.</p>{/if}<h4>Sauvegardes reprenables</h4>{#if selectedStudentSaves.length}<div class="transfer-choice"><label>Copier vers<select bind:value={transferTargetId} onchange={() => { pendingTransferGameId = ''; transferMessage = ''; }}><option value="">Choisir un élève</option>{#each transferTargets as target}<option value={target.user_id}>{target.display_name}</option>{/each}</select></label></div><ul class="save-list">{#each selectedStudentSaves as save}<li><span><strong>{gameName(save.game_id)}</strong><small>Révision {save.revision} · {new Date(save.updated_at).toLocaleDateString('fr-CH')}</small></span><button class="copy-button" class:confirm={pendingTransferGameId === save.game_id} disabled={!transferTargetId || transferBusy} onclick={() => transferSave(save)}>{pendingTransferGameId === save.game_id ? 'Confirmer' : 'Copier'}</button></li>{/each}</ul>{#if transferMessage}<p class="transfer-message" role="status">{transferMessage}</p>{/if}{:else}<p class="empty">Aucune sauvegarde distante.</p>{/if}<h4>Documents PCP</h4>{#if selectedDocuments.length}<ul class="document-list">{#each selectedDocuments as document}<li><strong>{document.document_kind === 'cv' ? 'CV' : 'Lettre de motivation'}</strong><small>Mis à jour le {new Date(document.updated_at).toLocaleDateString('fr-CH')}</small><details><summary>Afficher le contenu</summary><pre>{Object.entries(document.content).map(([key, value]) => `${key} : ${value}`).join('\\n\\n')}</pre></details></li>{/each}</ul>{:else}<p class="empty">Aucun document PCP synchronisé.</p>{/if}</section>
       </div>
     </article>
@@ -219,7 +225,7 @@
     <article class="panel response-detail-panel">
       <h3>Détail des réponses</h3>
       <p class="empty">Les traces servent à préparer un feedback ciblé ; elles ne remplacent pas l’observation de l’élève.</p>
-      <div class="table-wrap"><table><thead><tr><th>#</th><th>Question</th><th>Réponse</th><th>Attendu</th><th>Résultat</th><th>Essais</th></tr></thead><tbody>{#each selectedResponses as response}<tr><td>{response.questionIndex + 1}</td><td>{response.prompt ?? '—'}</td><td>{response.response ?? '—'}</td><td>{response.expected ?? '—'}</td><td>{response.correct ? 'Juste' : 'À reprendre'}</td><td>{response.attempts ?? '—'}</td></tr>{/each}</tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Jeu</th><th>Compétence</th><th>#</th><th>Question</th><th>Réponse</th><th>Attendu</th><th>Résultat</th><th>Essais</th><th>Indices</th></tr></thead><tbody>{#each selectedResponses as response}<tr><td>{gameName(response.game)}</td><td>{skillLabel(response.skill)}</td><td>{response.questionIndex + 1}</td><td>{response.prompt ?? '—'}</td><td>{response.response ?? '—'}</td><td>{response.expected ?? '—'}</td><td><span class:correct-response={response.correct} class:error-response={!response.correct}>{response.correct ? 'Juste' : 'À reprendre'}</span></td><td>{response.attempts ?? '—'}</td><td>{response.hintsUsed ?? '—'}</td></tr>{/each}</tbody></table></div>
     </article>
   {/if}
 </section>
@@ -229,4 +235,7 @@
   .visual-summary{display:grid;grid-template-columns:1.2fr 1fr;gap:1rem;margin-top:1rem}.ring-panel{display:flex;align-items:center;gap:1.2rem}.success-ring{width:116px;height:116px;flex:0 0 116px;border-radius:50%;display:grid;place-items:center;position:relative}.success-ring::before{content:"";position:absolute;inset:10px;border-radius:50%;background:white}.success-ring span{position:relative;font-weight:800;font-size:1.35rem;color:#173c31}.ring-panel h3{margin:.25rem 0}.ring-panel small{display:block;color:#718078;margin-top:.65rem;line-height:1.4}.quick-reading h3{margin-bottom:1rem}.reading-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.8rem}.reading-grid div{background:#f3f8f3;border-radius:12px;padding:.7rem}.reading-grid strong,.reading-grid span{display:block}.reading-grid strong{font-size:1.4rem;color:#285f4d}.reading-grid span{font-size:.78rem;color:#60736c;margin-top:.2rem}@media(max-width:800px){.visual-summary{grid-template-columns:1fr}}
   .header-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.5rem}.header-actions .secondary{background:white!important;color:#285f4d!important}.trend-panel{margin-top:1rem}.panel-heading{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start}.panel-heading p{font-size:.9rem}.panel-heading small{color:#718078}.trend-chart{height:150px;display:flex;align-items:end;gap:clamp(.3rem,1vw,.8rem);padding:1rem .4rem .2rem;border-bottom:1px solid #dbe7dc}.trend-column{height:100%;flex:1;display:flex;flex-direction:column;justify-content:end;align-items:center;gap:.35rem;min-width:18px}.trend-column span{width:100%;max-width:34px;min-height:5px;border-radius:7px 7px 0 0;background:linear-gradient(180deg,#63b878,#2b795b)}.trend-column small{font-size:.65rem;color:#718078;writing-mode:vertical-rl;transform:rotate(180deg)}.teacher-summary{background:#eef6ef;border-left:4px solid #5eaa75;padding:.75rem;border-radius:8px;line-height:1.45}.document-list{list-style:none;padding:0;display:grid;gap:.6rem}.document-list li{padding:.7rem;background:#f3f7f3;border-radius:10px}.document-list small{display:block;color:#718078;margin:.2rem 0 .45rem}.document-list pre{white-space:pre-wrap;overflow:auto;max-height:240px;font:inherit;font-size:.84rem;background:white;padding:.6rem;border-radius:7px}.response-detail-panel{margin-top:1rem}.response-detail-panel td{vertical-align:top;max-width:240px;word-break:break-word}@media print{.remote-dashboard>header button,.filters,.transfer-choice,.copy-button,:global(.secondary-zone),:global(.classes-card),.student-detail .document-list{display:none!important}.remote-dashboard{box-shadow:none;border:0}.trend-panel{break-inside:avoid}}
   .export-help{margin:-.55rem 0 1rem!important;font-size:.82rem;color:#60736c!important}
+  .correct-response{color:#216443;font-weight:800}.error-response{color:#a34b2b;font-weight:800}
+  .response-detail-panel{animation:panel-in .35s ease-out both}@keyframes panel-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.response-detail-panel{animation:none}}
 </style>
