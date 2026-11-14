@@ -9,6 +9,8 @@
   import lexique from '../../../../static/vocabulaire/lexique.csv?raw';
   import poses from '../../../../static/mascotte-noireau/index.json';
   import { gridSize, gridWord, letterChoices, makeGrid, matchRounds, normalize, readLexique, shuffle, spriteStyle, type Word } from './lexique';
+  import { masterySummary, updateWordProgress, type VocabularyProgress } from './progress';
+  import ContextLab from './ContextLab.svelte';
 
   export let initialMode = 'whack-image';
   const modes = [
@@ -98,6 +100,7 @@
   let showKey = false;
   let printKind: 'exercise' | 'vocabulary' = 'exercise';
   let responseDetails: ResponseDetail[] = [];
+  let vocabularyProgress: VocabularyProgress = {};
 
   $: categories = getCategories(bank);
   $: selectedCount = bank.filter((entry) => selectedThemes.includes(entry.theme)).length;
@@ -110,6 +113,7 @@
   $: poseCol = sheet.poses[poseRow].indexOf(pose);
   let alphabet: string[] = [];
   $: visibleVocabulary = distinctWords(playing).sort((a, b) => a.word.localeCompare(b.word, 'fr'));
+  $: mastery = masterySummary(vocabularyProgress);
   $: matchImages = options;
 
   function getCategories(entries: Word[]) {
@@ -137,16 +141,18 @@
     if (Array.isArray(state.selectedThemes) && state.selectedThemes.length) selectedThemes = state.selectedThemes;
     if (Array.isArray(state.galleryIds)) gallery = bank.filter((entry) => state.galleryIds.includes(entry.id));
     responseDetails = Array.isArray(state.responseDetails) ? state.responseDetails : [];
+    vocabularyProgress = state.vocabularyProgress && typeof state.vocabularyProgress === 'object' ? state.vocabularyProgress : {};
   }
 
   function saveRemoteProgress() {
     if (!student) return;
+    const mastery = masterySummary(vocabularyProgress);
     recordGameProgress({
       studentName: student,
       gameId: 'musee_vocabulaire',
-      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), queueIds: queue.map((entry) => entry.id), targetId: target?.id, attempts, solved, responseDetails },
+      state: { mode, selectedThemes, galleryIds: gallery.map((entry) => entry.id), queueIds: queue.map((entry) => entry.id), targetId: target?.id, attempts, solved, responseDetails, vocabularyProgress },
       formatVersion: 1,
-      summary: { label: `Musée des mots · ${gallery.length} mots`, completed: gallery.length, total: Math.max(1, selectedCount) }
+      summary: { label: `Musée des mots · ${mastery.acquired} mots acquis`, completed: mastery.acquired, total: Math.max(1, mastery.total) }
     });
   }
 
@@ -258,6 +264,7 @@
   function success(entry: Word) {
     collect(entry);
     solved = true;
+    vocabularyProgress = { ...vocabularyProgress, [entry.id]: updateWordProgress(vocabularyProgress[entry.id], true, reaction === 'hint' ? 1 : 0) };
     void recordGameActivity({
       studentName: student || getStudentName(), gameId: 'musee_vocabulaire', activityId: mode,
       correctCount: 1, questionCount: 1, errorCount: 0,
@@ -466,6 +473,7 @@
     <section class="settings" aria-label="Thèmes de vocabulaire">
       <button class="secondary" aria-expanded={settingsOpen} on:click={() => settingsOpen = !settingsOpen}>Choisir les thèmes</button>
       <span>{selectedThemes.length} thème{selectedThemes.length > 1 ? 's' : ''} · {selectedCount} entrées</span>
+      {#if mastery.total}<span class="mastery-chip" aria-label={`${mastery.acquired} mots acquis, ${mastery.fragile} fragiles, ${mastery.due} à revoir`}>{mastery.acquired} acquis · {mastery.fragile} fragiles · {mastery.due} à revoir</span>{/if}
       {#if settingsOpen}
         <div class="filters">
           {#each [['base', 'Les essentiels'], ['avance', 'Pour aller plus loin']] as [tier, title]}
@@ -663,6 +671,7 @@
         </div>
       {/if}
     </section>
+    {#if ready && !inHall}<ContextLab words={playing} studentName={student || getStudentName()} />{/if}
     {/if}
     <aside class="game">
       <h2>Ma collection · {gallery.length}</h2>
@@ -734,6 +743,7 @@
   h2 { margin-top: 0; }
   .settings, .game { background: #fffaf0; border: 1px solid #d8c9ae; padding: clamp(.9rem, 3vw, 1.6rem); border-radius: 1rem; margin-bottom: 1rem; }
   .settings > span { margin-inline-start: .75rem; }
+  .mastery-chip { color: #285c4a; font-weight: 800; }
   .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .75rem; margin-block: .9rem; }
   fieldset { border: 1px solid #d8c9ae; border-radius: .7rem; min-width: 0; }
   legend { font-weight: 750; }
