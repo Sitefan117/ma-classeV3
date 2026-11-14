@@ -24,6 +24,7 @@ export type RemoteGameSave = {
   game_id: string;
   revision: number;
   updated_at: string;
+  state?: Record<string, unknown>;
 };
 
 export type StudentDataExport = {
@@ -175,5 +176,5 @@ export async function listTeacherStudentDocuments(): Promise<RemoteStudentDocume
 }
 
 export async function listRemoteGameSaves(): Promise<RemoteGameSave[]> {
-  return fetchAllRows<RemoteGameSave>('game_saves?select=student_id,game_id,revision,updated_at&order=updated_at.desc', 'saves');
+  return fetchAllRows<RemoteGameSave>('game_saves?select=student_id,game_id,revision,updated_at,state&order=updated_at.desc', 'saves');
 }
